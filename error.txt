@@ -1,0 +1,5 @@
+- Thêm điều chỉnh file âm thanh cho các loại âm thanh mặc định (Ở chào cờ, báo động, sinh hoạt) (Ở giọng đọc, thêm chức năng bổ sung cho phép cho người dùng tự thu âm thanh tùy ý)
+- Giọng đọc miền Nam, Bắc, Trung (Giọng nam/ nữ) bị mặc định
+- Chưa có chế độ phát lặp lại
+- Phần “Âm lượng”, khi người dùng điều chỉnh thanh âm lượng thì âm thanh phải thay đổi theo lượng âm thanh thay đổi
+

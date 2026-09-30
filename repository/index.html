@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>HỆ THỐNG THÔNG BÁO TỰ ĐỘNG - GDQPAN ĐHQG-HCM</title>
+  <link rel="icon" type="image/png" href="assets/logo_gdqpan.png">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="app-container">
+
+  <!-- ======================================================= -->
+  <!-- 1. GIAO DIỆN DESKTOP (MÀN HÌNH RỘNG MÁY TÍNH PHÒNG TRỰC) -->
+  <!-- ======================================================= -->
+  <div class="desktop-view">
+    <!-- Header Desktop -->
+    <header class="desktop-header">
+      <div class="brand-section">
+        <img class="brand-logo" src="assets/logo_gdqpan.png" alt="Logo GDQPAN">
+        <div class="brand-info">
+          <h1>HỆ THỐNG THÔNG BÁO TỰ ĐỘNG</h1>
+          <h2>TRUNG TÂM GIÁO DỤC QUỐC PHÒNG VÀ AN NINH<br>ĐẠI HỌC QUỐC GIA THÀNH PHỐ HỒ CHÍ MINH</h2>
+          <div class="brand-slogan">Đoàn kết - Kỷ cương - Chất lượng - Tiên phong</div>
+        </div>
+      </div>
+
+      <!-- Đồng hồ LED Quân sự -->
+      <div class="clock-widget">
+        <div class="clock-labels">
+          <span>GIỜ</span><span>PHÚT</span><span>GIÂY</span>
+        </div>
+        <div class="clock-time" id="clock-desktop">00:00:00</div>
+        <div class="clock-date" id="date-desktop">Đang tải...</div>
+      </div>
+
+      <!-- Điều khiển Âm lượng -->
+      <div class="volume-widget">
+        <h3>ÂM LƯỢNG</h3>
+        <div class="volume-controls">
+          <span>🔊</span>
+          <input type="range" id="volume-desktop" class="volume-slider" min="0" max="1" step="0.05" value="0.8">
+          <span class="volume-pct" id="volpct-desktop">80%</span>
+        </div>
+        <div class="system-status-indicator">
+          <span class="status-dot"></span>
+          <span>HỆ THỐNG SẴN SÀNG</span>
+        </div>
+      </div>
+
+      <!-- Ảnh Hồ Nước Khuôn Viên -->
+      <div class="campus-banner-desktop" style="background-image: url('assets/banner_campus.jpg');">
+        <div class="campus-caption">
+          ĐẠI HỌC QUỐC GIA THÀNH PHỐ HỒ CHÍ MINH<br>
+          TRUNG TÂM GIÁO DỤC QUỐC PHÒNG VÀ AN NINH
+        </div>
+      </div>
+    </header>
+
+    <!-- Thân Trang Desktop: 4 Panel Trên & 3 Panel Dưới -->
+    <main class="desktop-main">
+      <!-- 4 Panel Phía Trên -->
+      <div class="grid-top">
+        <!-- 1. Chào cờ -->
+        <section class="ui-panel">
+          <div class="panel-title"><span class="icon">⚑</span> CHÀO CỜ</div>
+          <div class="panel-body">
+            <div class="buttons-grid-3" id="chao-desktop"></div>
+          </div>
+        </section>
+
+        <!-- 2. Báo động -->
+        <section class="ui-panel">
+          <div class="panel-title"><span class="icon">🔔</span> BÁO ĐỘNG</div>
+          <div class="panel-body">
+            <div class="buttons-grid-3" id="alarm-desktop"></div>
+          </div>
+        </section>
+
+        <!-- 3. Sinh hoạt 9 chế độ -->
+        <section class="ui-panel">
+          <div class="panel-title"><span class="icon">♟</span> SINH HOẠT</div>
+          <div class="panel-body">
+            <div class="buttons-grid-3" id="daily-desktop"></div>
+          </div>
+        </section>
+
+        <!-- 4. Nhạc -->
+        <section class="ui-panel">
+          <div class="panel-title"><span class="icon">♫</span> NHẠC</div>
+          <div class="panel-body music-area">
+            <div class="music-fast-list" id="music-fast-desktop"></div>
+            <div class="genre-list" id="genre-list-desktop"></div>
+          </div>
+        </section>
+      </div>
+
+      <!-- 3 Panel Phía Dưới -->
+      <div class="grid-bottom">
+        <!-- 5. Thông Báo Khác -->
+        <section class="ui-panel">
+          <div class="panel-title"><span class="icon">🔊</span> THÔNG BÁO KHÁC</div>
+          <div class="panel-body">
+            <textarea id="tts-input-desktop" class="tts-textarea" placeholder="Nhập nội dung thông báo tại đây..."></textarea>
+            <div class="tts-controls-row">
+              <label style="font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:6px;flex:1.5;">
+                Giọng đọc:
+                <select id="voice-select-desktop" class="tts-select"></select>
+              </label>
+              <label style="font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:6px;flex:1;">
+                Tốc độ:
+                <select id="rate-select-desktop" class="tts-select">
+                  <option value="0.85">Chậm</option>
+                  <option value="1" selected>Bình thường</option>
+                  <option value="1.15">Nhanh</option>
+                </select>
+              </label>
+            </div>
+            <div class="action-buttons-row">
+              <button class="app-btn btn-green" onclick="handleSpeakText('desktop')">▶ PHÁT NGAY</button>
+              <button class="app-btn btn-blue" onclick="handleStopAll()">■ DỪNG</button>
+              <button class="app-btn btn-dark" onclick="handleSaveText()">💾 LƯU NỘI DUNG</button>
+              <button class="app-btn btn-red" onclick="handleClearText()">🗑 XÓA</button>
+              <button class="app-btn btn-dark" onclick="openModalSheet('settings')">⚙ GÁN ÂM THANH</button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 6. Lựa Chọn Giọng Đọc 3 Miền -->
+        <section class="ui-panel">
+          <div class="panel-title"><span class="icon">🎙</span> LỰA CHỌN GIỌNG ĐỌC</div>
+          <div class="panel-body">
+            <div class="voice-region-grid">
+              <div class="region-col">
+                <div class="region-header">Miền Bắc</div>
+                <div class="region-options">
+                  <label class="voice-radio-label"><input type="radio" name="regionVoiceDesktop" value="bac_nam"> Nam</label>
+                  <label class="voice-radio-label"><input type="radio" name="regionVoiceDesktop" value="bac_nu"> Nữ</label>
+                </div>
+              </div>
+              <div class="region-col">
+                <div class="region-header">Miền Trung</div>
+                <div class="region-options">
+                  <label class="voice-radio-label"><input type="radio" name="regionVoiceDesktop" value="trung_nam"> Nam</label>
+                  <label class="voice-radio-label"><input type="radio" name="regionVoiceDesktop" value="trung_nu"> Nữ</label>
+                </div>
+              </div>
+              <div class="region-col">
+                <div class="region-header">Miền Nam</div>
+                <div class="region-options">
+                  <label class="voice-radio-label"><input type="radio" name="regionVoiceDesktop" value="nam_nam"> Nam</label>
+                  <label class="voice-radio-label"><input type="radio" name="regionVoiceDesktop" value="nam_nu" checked> Nữ</label>
+                </div>
+              </div>
+            </div>
+
+            <div class="voice-test-box">
+              <b style="font-size:12.5px;color:var(--primary-dark);">Nghe thử giọng đọc:</b>
+              <div class="voice-test-row">
+                <input type="text" id="test-voice-input" class="voice-test-input" value="Xin chào, đây là giọng đọc thử.">
+                <button class="app-btn btn-blue" onclick="handleTestVoice('desktop')">▶ NGHE THỬ</button>
+              </div>
+              <small style="color:#6d807a;font-size:11px;display:block;margin-top:6px;">
+                * Hệ thống tự động tối ưu hóa ngữ điệu giọng đọc 3 miền chuẩn phát thanh.
+              </small>
+            </div>
+          </div>
+        </section>
+
+        <!-- 7. Lập Lịch Phát Tự Động -->
+        <section class="ui-panel">
+          <div class="panel-title"><span class="icon">▦</span> LỊCH PHÁT TỰ ĐỘNG</div>
+          <div class="panel-body">
+            <div class="schedule-input-row">
+              <input type="time" id="sch-time-input" class="voice-test-input" style="width:110px;" value="07:00">
+              <select id="sch-action-select" class="tts-select" style="flex:1.2;"></select>
+              <input type="text" id="sch-text-input" class="voice-test-input" placeholder="Nội dung riêng (tùy chọn)" style="flex:1.5;">
+              <button class="app-btn btn-blue" onclick="handleAddSchedule()">+ THÊM LỊCH</button>
+            </div>
+
+            <div style="max-height:165px;overflow-y:auto;border:1px solid #d4deda;border-radius:6px;">
+              <table class="schedule-table">
+                <thead>
+                  <tr>
+                    <th style="width:40px;text-align:center;">STT</th>
+                    <th style="width:80px;">Thời gian</th>
+                    <th>Nội dung phát</th>
+                    <th style="width:65px;text-align:center;">Trạng thái</th>
+                    <th style="width:55px;text-align:center;">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody id="schedule-tbody-desktop"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Footer Bar Desktop -->
+    <footer class="desktop-footer">
+      <button class="desktop-footer-btn" onclick="openModalSheet('settings')">⚙ CÀI ĐẶT HỆ THỐNG</button>
+      <button class="desktop-footer-btn" onclick="openModalSheet('schedule')">📁 QUẢN LÝ LỊCH PHÁT</button>
+      <button class="desktop-footer-btn" onclick="openModalSheet('music', 'Tất cả nhạc')">♫ QUẢN LÝ NHẠC</button>
+      <button class="desktop-footer-btn" onclick="openModalSheet('history')">▤ NHẬT KÝ HOẠT ĐỘNG</button>
+      <button class="desktop-footer-btn emergency-btn" onclick="triggerEmergency()">🔔 PHÁT KHẨN CẤP / ƯU TIÊN CAO</button>
+      <button class="desktop-footer-btn" onclick="handleStopAll()">⏻ DỪNG PHÁT</button>
+    </footer>
+  </div>
+
+  <!-- ======================================================= -->
+  <!-- 2. GIAO DIỆN MOBILE-FIRST (PIXEL-PERFECT THEO MẪU ẢNH)  -->
+  <!-- ======================================================= -->
+  <div class="mobile-view">
+    <!-- Status Bar Mô Phỏng -->
+    <div class="mobile-status-bar">
+      <span id="top-bar-time">09:41</span>
+      <div class="status-bar-icons">
+        <span>📶</span>
+        <span>📡</span>
+        <span>100% 🔋</span>
+      </div>
+    </div>
+
+    <!-- Header Thương hiệu Mobile -->
+    <header class="mobile-header">
+      <div class="mobile-brand-left">
+        <img class="mobile-logo" src="assets/logo_gdqpan.png" alt="Logo GDQPAN">
+        <div class="mobile-title-block">
+          <h1>HỆ THỐNG THÔNG BÁO TỰ ĐỘNG</h1>
+          <div class="slogan-sub">Đoàn kết - Kỷ cương - Chất lượng - Tiên phong</div>
+        </div>
+      </div>
+      <div class="mobile-header-dept">
+        ĐẠI HỌC QUỐC GIA TP.HCM<br>
+        TRUNG TÂM GDQPAN
+      </div>
+    </header>
+
+    <!-- Banner Hồ Nước Khuôn Viên Cong -->
+    <div class="mobile-banner-card" style="background-image: url('assets/banner_campus.jpg');">
+      <div class="mobile-banner-text">
+        <p>Vững bước<br>cùng thế hệ trẻ<br>xây dựng và bảo vệ Tổ quốc</p>
+      </div>
+    </div>
+
+    <!-- Đồng Hồ LED & Thanh Trượt Âm Lượng Mobile -->
+    <div class="mobile-time-volume-bar">
+      <div class="mobile-clock-area">
+        <span class="cal-icon">📅</span>
+        <div class="mobile-clock-details">
+          <div class="date-text" id="date-mobile">Thứ Hai, 24 tháng 3 năm 2025</div>
+          <div class="time-text" id="clock-mobile">09:41:27</div>
+        </div>
+      </div>
+      <div class="mobile-vol-area">
+        <span>🔊</span>
+        <input type="range" id="volume-mobile" min="0" max="1" step="0.05" value="0.8">
+        <span class="vol-num" id="volpct-mobile">80%</span>
+      </div>
+    </div>
+
+    <!-- LƯỚI 6 CARD CHỨC NĂNG CHÍNH (2 CỘT x 3 HÀNG) -->
+    <div class="mobile-cards-grid">
+      <!-- 1. Chào cờ -->
+      <div class="mobile-feature-card" onclick="openModalSheet('chao')">
+        <div class="mobile-card-circle-icon icon-red">🇻🇳</div>
+        <div class="mobile-card-title">CHÀO CỜ</div>
+        <div class="mobile-card-sub">Nghiêm trang - Tự hào</div>
+        <div class="mobile-card-arrow">›</div>
+      </div>
+
+      <!-- 2. Báo động -->
+      <div class="mobile-feature-card" onclick="openModalSheet('alarm')">
+        <div class="mobile-card-circle-icon icon-orange-red">🚨</div>
+        <div class="mobile-card-title">BÁO ĐỘNG</div>
+        <div class="mobile-card-sub">Chủ động - Sẵn sàng</div>
+        <div class="mobile-card-arrow">›</div>
+      </div>
+
+      <!-- 3. Sinh hoạt -->
+      <div class="mobile-feature-card" onclick="openModalSheet('daily')">
+        <div class="mobile-card-circle-icon icon-green">👥</div>
+        <div class="mobile-card-title">SINH HOẠT</div>
+        <div class="mobile-card-sub">Nề nếp - Hiệu quả</div>
+        <div class="mobile-card-arrow">›</div>
+      </div>
+
+      <!-- 4. Nhạc -->
+      <div class="mobile-feature-card" onclick="openModalSheet('music', 'Tất cả nhạc')">
+        <div class="mobile-card-circle-icon icon-blue">🎵</div>
+        <div class="mobile-card-title">NHẠC</div>
+        <div class="mobile-card-sub">Âm nhạc - Kết nối</div>
+        <div class="mobile-card-arrow">›</div>
+      </div>
+
+      <!-- 5. Thông báo khác -->
+      <div class="mobile-feature-card" onclick="document.getElementById('quick-tts-mobile').focus()">
+        <div class="mobile-card-circle-icon icon-orange">📢</div>
+        <div class="mobile-card-title">THÔNG BÁO KHÁC</div>
+        <div class="mobile-card-sub">Linh hoạt - Kịp thời</div>
+        <div class="mobile-card-arrow">›</div>
+      </div>
+
+      <!-- 6. Lịch phát tự động -->
+      <div class="mobile-feature-card" onclick="openModalSheet('schedule')">
+        <div class="mobile-card-circle-icon icon-purple">📅</div>
+        <div class="mobile-card-title">LỊCH PHÁT TỰ ĐỘNG</div>
+        <div class="mobile-card-sub">Chính xác - Đúng giờ</div>
+        <div class="mobile-card-arrow">›</div>
+      </div>
+    </div>
+
+    <!-- KHU VỰC THAO TÁC NHANH DƯỚI ĐÁY (QUICK ACTIONS) -->
+    <div class="mobile-quick-section">
+      <!-- Cột 1: Lựa chọn giọng đọc -->
+      <div class="quick-box">
+        <div class="quick-box-header">
+          <span>🎙</span> LỰA CHỌN GIỌNG ĐỌC
+        </div>
+        <!-- Tabs vùng miền -->
+        <div class="segmented-tabs">
+          <div class="segmented-tab" data-region="bac">Miền Bắc</div>
+          <div class="segmented-tab" data-region="trung">Miền Trung</div>
+          <div class="segmented-tab active" data-region="nam">Miền Nam</div>
+        </div>
+        <!-- Giới tính -->
+        <div class="gender-tabs">
+          <button class="gender-btn" data-gender="nam">♂ Nam</button>
+          <button class="gender-btn active" data-gender="nu">♀ Nữ</button>
+        </div>
+      </div>
+
+      <!-- Cột 2: Nội dung thông báo -->
+      <div class="quick-box">
+        <div class="quick-box-header">
+          <span>📋</span> NỘI DUNG THÔNG BÁO
+        </div>
+        <div class="quick-input-area">
+          <textarea id="quick-tts-mobile" class="quick-text-field" placeholder="Nhập nội dung cần thông báo..."></textarea>
+          <div class="quick-text-counter" id="quick-char-counter">0/500</div>
+          <button class="quick-play-btn" onclick="handleSpeakText('mobile')">▶ PHÁT THÔNG BÁO</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- THANH BÁO ĐỘNG KHẨN CẤP MÀU ĐỎ NỔI BẬT -->
+    <div class="mobile-emergency-banner" onclick="triggerEmergency()">
+      <div class="emergency-left">
+        <span class="emergency-bell-icon">🔔</span>
+        <div class="emergency-text">
+          <h3>PHÁT KHẨN CẤP</h3>
+          <p>ƯU TIÊN CAO NHẤT</p>
+        </div>
+      </div>
+      <div class="emergency-arrow">›</div>
+    </div>
+
+    <!-- BOTTOM NAVIGATION BAR 4 TAB -->
+    <nav class="mobile-bottom-nav">
+      <div class="nav-item active" data-tab="home">
+        <span class="nav-icon">🏠</span>
+        <span>Trang chủ</span>
+      </div>
+      <div class="nav-item" data-tab="history">
+        <span class="nav-icon">🕒</span>
+        <span>Lịch sử</span>
+      </div>
+      <div class="nav-item" data-tab="settings">
+        <span class="nav-icon">⚙</span>
+        <span>Cài đặt</span>
+      </div>
+      <div class="nav-item" data-tab="about">
+        <span class="nav-icon">ℹ</span>
+        <span>Giới thiệu</span>
+      </div>
+    </nav>
+  </div>
+
+</div>
+
+<!-- ======================================================= -->
+<!-- 3. MODAL SHEET & BOTTOM SHEET DÙNG CHUNG                -->
+<!-- ======================================================= -->
+<div id="modal-overlay" class="modal-overlay"></div>
+<div id="modal-sheet" class="modal-sheet">
+  <div class="modal-header">
+    <h2 id="modal-title">Tiêu đề</h2>
+    <button class="modal-close-btn" onclick="closeModal()">✕</button>
+  </div>
+  <div id="modal-content" class="modal-content"></div>
+</div>
+
+<!-- ======================================================= -->
+<!-- 4. SCRIPTS LIÊN KẾT HỆ THỐNG                             -->
+<!-- ======================================================= -->
+<script src="js/storage.js"></script>
+<script src="js/audio-engine.js"></script>
+<script src="js/tts-engine.js"></script>
+<script src="js/scheduler.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>

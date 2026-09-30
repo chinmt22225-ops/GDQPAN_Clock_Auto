@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Production & Packaging Build Output
+dist/
+GDQPAN/
+
+# Python cache & bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Temporary & backup files
+*.bak
+*bak*
+*.backup_*
+*.tmp
+*.lnk
+
+# Operating system files
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Large media files exceeding GitHub 100MB limit
+Sound/*.mp4
+Sound/*.mov
+
+# IDE & Editor folders
+.vscode/
+.idea/

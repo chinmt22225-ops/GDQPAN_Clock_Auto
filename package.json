@@ -1,0 +1,89 @@
+{
+  "name": "gdqpan",
+  "productName": "GDQPAN",
+  "version": "1.0.0",
+  "description": "Hệ Thống Thông Báo & Phát Thanh Tự Động GDQPAN - ĐHQG-HCM",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "build:portable": "electron-builder --win portable",
+    "build:setup": "electron-builder --win nsis"
+  },
+  "author": "Trung Tâm Giáo Dục Quốc Phòng và An Ninh - ĐHQG-HCM",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "44.4.1",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "vn.edu.vnuhcm.gdqpan.thongbao",
+    "productName": "GDQPAN",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "icon": "assets/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "GDQPAN",
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "tts_server.js",
+      "HE_THONG_THONG_BAO_TU_DONG_DESKTOP.html",
+      "vtv_player.html",
+      "assets/**/*",
+      "config/**/*",
+      "Sound/**/*",
+      "!Sound/demo_1_BaoThuc.wav",
+      "!Sound/báo thức_1.m4a",
+      "tts_service.py"
+    ],
+    "extraResources": [
+      {
+        "from": "assets",
+        "to": "assets",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "config",
+        "to": "config",
+        "filter": [
+          "**/*"
+        ]
+      },
+      "tts_service.py",
+      "chay_dich_vu_giong_doc.bat"
+    ]
+  },
+  "dependencies": {
+    "hls.js": "^1.7.3",
+    "msedge-tts": "^2.0.7"
+  }
+}

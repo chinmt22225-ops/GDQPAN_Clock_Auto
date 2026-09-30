@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GDQPAN - Cửa Sổ Truyền Hình Thời Sự VTV</title>
+  <link rel="icon" type="image/png" href="assets/icon.png">
+  <script src="assets/hls.min.js"></script>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      background: #000000;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #player-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000000;
+    }
+
+    /* KHUNG PHÁT NATIVE HLS / MP4 */
+    #hls-wrap {
+      width: 100%;
+      height: 100%;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: #000000;
+    }
+
+    video {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      background: #000000;
+      outline: none;
+    }
+
+    /* KHUNG PHÁT YOUTUBE IFRAME */
+    #yt-wrap {
+      width: 100%;
+      height: 100%;
+      display: none;
+      position: relative;
+      background: #000000;
+    }
+
+    #yt-wrap iframe, #yt-player-box {
+      width: 100%;
+      height: 100%;
+      border: none;
+      outline: none;
+    }
+
+    /* KHUNG PHÁT WEBVIEW CHO TRANG WEB TRỰC TIẾP */
+    #web-wrap {
+      width: 100%;
+      height: 100%;
+      display: none;
+      position: relative;
+      background: #000000;
+    }
+
+    #vtv-webview {
+      width: 100%;
+      height: 100%;
+      border: none;
+      outline: none;
+    }
+
+    /* OVERLAY LOADING */
+    .overlay-loading {
+      position: absolute;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.88);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      z-index: 10;
+    }
+
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 4px solid rgba(255, 255, 255, 0.2);
+      border-top-color: #ffd651;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading-text {
+      font-size: 14px;
+      font-weight: 700;
+      color: #ffd651;
+      letter-spacing: 0.3px;
+    }
+
+    /* OVERLAY ERROR */
+    .overlay-error {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 20, 0.96);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      padding: 24px;
+      text-align: center;
+      z-index: 20;
+    }
+
+    .error-icon {
+      font-size: 40px;
+      line-height: 1;
+    }
+
+    .error-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #ffffff;
+    }
+
+    .error-desc {
+      font-size: 13.5px;
+      color: #ffa8a8;
+      max-width: 520px;
+      line-height: 1.5;
+    }
+
+    .btn-retry {
+      margin-top: 8px;
+      padding: 9px 22px;
+      background: #0b5945;
+      color: #ffffff;
+      border: 1.5px solid #2ecc71;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 800;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-retry:hover {
+      background: #0e7558;
+      transform: scale(1.03);
+    }
+
+    /* FLOATING TOP BAR */
+    .floating-bar {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      right: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      pointer-events: none;
+      z-index: 5;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    #player-container:hover .floating-bar {
+      opacity: 1;
+    }
+
+    .badge-live {
+      pointer-events: auto;
+      background: rgba(201, 42, 42, 0.88);
+      color: #ffffff;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 4px 10px;
+      border-radius: 20px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      letter-spacing: 0.5px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+    }
+
+    .badge-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #ffffff;
+      animation: pulse 1.2s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.3; transform: scale(0.8); }
+    }
+  </style>
+</head>
+<body>
+
+<div id="player-container">
+  <div class="floating-bar">
+    <div class="badge-live">
+      <div class="badge-dot"></div>
+      <span id="player-badge-text">TRỰC TIẾP</span>
+    </div>
+  </div>
+
+  <!-- NGUỒN PHÁT 1: HLS / MP4 NATIVE -->
+  <div id="hls-wrap">
+    <video id="vtv-video" playsinline controls autoplay></video>
+  </div>
+
+  <!-- NGUỒN PHÁT 2: YOUTUBE EMBED -->
+  <div id="yt-wrap">
+    <div id="yt-player-box"></div>
+  </div>
+
+  <!-- NGUỒN PHÁT 3: WEB PLAYER TRỰC TIẾP (CHO VTVGO / TRANG WEB BẤT KỲ) -->
+  <div id="web-wrap">
+    <webview id="vtv-webview" allowpopups></webview>
+  </div>
+
+  <!-- LOADING STATE -->
+  <div id="loading-overlay" class="overlay-loading">
+    <div class="spinner"></div>
+    <div class="loading-text" id="loading-msg">Đang kết nối luồng phát thời sự...</div>
+  </div>
+
+  <!-- ERROR STATE -->
+  <div id="error-overlay" class="overlay-error">
+    <div class="error-icon">⚠️</div>
+    <div class="error-title" id="error-title">Không thể phát luồng thời sự</div>
+    <div class="error-desc" id="error-text">Không phát được link này, vui lòng thử dán link khác hoặc liên hệ người phụ trách kỹ thuật.</div>
+    <button type="button" class="btn-retry" onclick="retryStream()">
+      <span>🔄</span> Thử lại
+    </button>
+  </div>
+</div>
+
+<!-- NẠP YOUTUBE IFRAME API -->
+<script src="https://www.youtube.com/iframe_api" async></script>
+
+<script>
+  let currentRawUrl = '';
+  let activePlayerType = ''; // 'hls' | 'youtube' | 'web' | ''
+  let hlsInstance = null;
+  let ytPlayer = null;
+  let isYtApiReady = false;
+
+  const video = document.getElementById('vtv-video');
+  const hlsWrap = document.getElementById('hls-wrap');
+  const ytWrap = document.getElementById('yt-wrap');
+  const webWrap = document.getElementById('web-wrap');
+  const loadingOverlay = document.getElementById('loading-overlay');
+  const loadingMsg = document.getElementById('loading-msg');
+  const errorOverlay = document.getElementById('error-overlay');
+  const errorTitle = document.getElementById('error-title');
+  const errorText = document.getElementById('error-text');
+  const badgeText = document.getElementById('player-badge-text');
+
+  // Callback khi YouTube IFrame API tải xong
+  window.onYouTubeIframeAPIReady = function() {
+    isYtApiReady = true;
+    if (activePlayerType === 'youtube' && currentRawUrl) {
+      playAnyStream(currentRawUrl);
+    }
+  };
+
+  function getQueryUrl() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('streamUrl') || '';
+  }
+
+  function showLoading(show, message) {
+    if (loadingOverlay) {
+      if (message && loadingMsg) loadingMsg.textContent = message;
+      loadingOverlay.style.display = show ? 'flex' : 'none';
+    }
+  }
+
+  function showError(msg, title) {
+    showLoading(false);
+    if (errorTitle) errorTitle.textContent = title || 'Không thể phát luồng thời sự';
+    if (errorText) errorText.textContent = msg || 'Không phát được link này, vui lòng thử dán link khác hoặc liên hệ người phụ trách kỹ thuật.';
+    if (errorOverlay) errorOverlay.style.display = 'flex';
+  }
+
+  function hideError() {
+    if (errorOverlay) errorOverlay.style.display = 'none';
+  }
+
+  // Phân tích và phát nguồn video dựa vào URL
+  async function playAnyStream(rawUrl) {
+    if (!rawUrl || !rawUrl.trim()) {
+      showError('Chưa có đường link kênh thời sự. Vui lòng bấm nút ⚙ "Cài đặt kênh thời sự" trên giao diện chính để dán link phát.', 'Chưa cấu hình link');
+      return;
+    }
+
+    currentRawUrl = rawUrl.trim();
+    hideError();
+    showLoading(true, 'Đang kiểm tra và nạp nguồn phát...');
+
+    // 1. Nhận diện và trích xuất nguồn phát qua Electron IPC hoặc hàm fallback
+    let streamInfo = null;
+    try {
+      if (window.electronAPI && window.electronAPI.resolveStreamInfo) {
+        streamInfo = await window.electronAPI.resolveStreamInfo(currentRawUrl);
+      } else if (typeof window !== 'undefined' && window.require) {
+        const { ipcRenderer } = window.require('electron');
+        if (ipcRenderer) {
+          streamInfo = await ipcRenderer.invoke('resolve-stream-info', currentRawUrl);
+        }
+      }
+    } catch (e) {
+      console.warn('[VTV Player] Lỗi gọi resolve-stream-info:', e);
+    }
+
+    // Fallback cho môi trường web thuần nếu không có IPC
+    if (!streamInfo) {
+      const ytMatch = currentRawUrl.match(/(?:youtube\.com\/(?:watch\?.*v=|embed\/|v\/|live\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i);
+      if (ytMatch && ytMatch[1]) {
+        streamInfo = { type: 'youtube', videoId: ytMatch[1], originalUrl: currentRawUrl };
+      } else {
+        streamInfo = { type: 'hls', streamUrl: currentRawUrl, originalUrl: currentRawUrl };
+      }
+    }
+
+    if (streamInfo.error) {
+      showError(streamInfo.error);
+      return;
+    }
+
+    if (streamInfo.type === 'youtube') {
+      playYouTubeVideo(streamInfo.videoId);
+    } else if (streamInfo.type === 'web') {
+      playWebView(streamInfo.webUrl || streamInfo.originalUrl);
+    } else {
+      playHlsStream(streamInfo.streamUrl);
+    }
+  }
+
+  // --- PHÁT YOUTUBE EMBED ---
+  function playYouTubeVideo(videoId) {
+    activePlayerType = 'youtube';
+    if (badgeText) badgeText.textContent = 'YOUTUBE TRỰC TIẾP';
+
+    // Dừng HLS nếu đang phát
+    if (video) {
+      try { video.pause(); video.removeAttribute('src'); video.load(); } catch (e) {}
+    }
+    if (hlsInstance) {
+      try { hlsInstance.destroy(); } catch (e) {}
+      hlsInstance = null;
+    }
+
+    // Dừng Webview nếu đang chạy
+    const wv = document.getElementById('vtv-webview');
+    if (wv) {
+      try { wv.src = 'about:blank'; } catch (e) {}
+    }
+
+    if (hlsWrap) hlsWrap.style.display = 'none';
+    if (webWrap) webWrap.style.display = 'none';
+    if (ytWrap) ytWrap.style.display = 'block';
+
+    if (!window.YT || !window.YT.Player) {
+      showLoading(true, 'Đang nạp trình phát YouTube...');
+      // Chờ YT ready
+      return;
+    }
+
+    if (ytPlayer && typeof ytPlayer.loadVideoById === 'function') {
+      ytPlayer.loadVideoById(videoId);
+      showLoading(false);
+      hideError();
+    } else {
+      ytPlayer = new YT.Player('yt-player-box', {
+        videoId: videoId,
+        playerVars: {
+          autoplay: 1,
+          playsinline: 1,
+          rel: 0,
+          modestbranding: 1
+        },
+        events: {
+          onReady: function(event) {
+            showLoading(false);
+            hideError();
+            try { event.target.playVideo(); } catch (e) {}
+          },
+          onError: function(event) {
+            console.warn('[YouTube Player] Lỗi mã:', event.data);
+            showLoading(false);
+            // Mã lỗi 101 hoặc 150: Video không cho phép nhúng phát ngoài YouTube
+            if (event.data === 101 || event.data === 150) {
+              showError('Kênh YouTube này không cho phép phát trong ứng dụng. Vui lòng thử lấy link từ trang khác, ví dụ vtvgo.vn.', 'YouTube từ chối phát nhúng');
+            } else {
+              showError('Không phát được link này, vui lòng thử dán link khác hoặc liên hệ người phụ trách kỹ thuật.');
+            }
+          }
+        }
+      });
+    }
+  }
+
+  // --- PHÁT WEB PLAYER TRỰC TIẾP QUA WEBVIEW (CHO VTVGO / BÁO ĐÀI / TRANG WEB BẤT KỲ) ---
+  function playWebView(webUrl) {
+    activePlayerType = 'web';
+    if (badgeText) badgeText.textContent = 'TRUYỀN HÌNH TRỰC TIẾP';
+
+    // Dừng HLS nếu đang phát
+    if (video) {
+      try { video.pause(); video.removeAttribute('src'); video.load(); } catch (e) {}
+    }
+    if (hlsInstance) {
+      try { hlsInstance.destroy(); } catch (e) {}
+      hlsInstance = null;
+    }
+
+    // Tạm dừng YouTube nếu đang phát
+    if (ytPlayer && typeof ytPlayer.pauseVideo === 'function') {
+      try { ytPlayer.pauseVideo(); } catch (e) {}
+    }
+
+    if (hlsWrap) hlsWrap.style.display = 'none';
+    if (ytWrap) ytWrap.style.display = 'none';
+    if (webWrap) webWrap.style.display = 'block';
+
+    const wv = document.getElementById('vtv-webview');
+    if (!wv) {
+      showError('Không phát được link này, vui lòng thử dán link khác hoặc liên hệ người phụ trách kỹ thuật.');
+      return;
+    }
+
+    showLoading(true, 'Đang kết nối trang phát trực tiếp...');
+
+    const onDomReady = () => {
+      showLoading(false);
+      hideError();
+      try {
+        // Tối ưu giao diện: ẩn banner quảng cáo, thanh điều hướng rườm rà trên web
+        wv.insertCSS(`
+          header, footer, nav, .header, .footer, .navbar, .ad-banner, .ads, .sidebar, 
+          .vtvgo-header, .vtvgo-footer, .banner-bottom, .qc-top, .banner-ads {
+            display: none !important;
+          }
+          body {
+            overflow: auto !important;
+            background: #000000 !important;
+          }
+          video {
+            max-width: 100% !important;
+            max-height: 100% !important;
+          }
+        `);
+
+        // Thử kích hoạt phát video nếu trang chưa tự động chạy
+        wv.executeJavaScript(`
+          (function() {
+            const v = document.querySelector('video');
+            if (v && v.paused) {
+              v.muted = false;
+              v.play().catch(function() {});
+            }
+          })();
+        `).catch(function() {});
+      } catch (e) {}
+    };
+
+    const onFailLoad = (event) => {
+      // Bỏ qua lỗi hủy điều hướng (ERR_ABORTED / code -3)
+      if (event && event.errorCode === -3) return;
+      console.warn('[Webview] Lỗi tải trang:', event);
+      showError('Không phát được link này, vui lòng thử dán link khác hoặc liên hệ người phụ trách kỹ thuật.');
+    };
+
+    wv.removeEventListener('dom-ready', onDomReady);
+    wv.removeEventListener('did-fail-load', onFailLoad);
+    wv.addEventListener('dom-ready', onDomReady, { once: true });
+    wv.addEventListener('did-fail-load', onFailLoad);
+
+    try {
+      wv.src = webUrl;
+    } catch (e) {
+      showError('Không phát được link này, vui lòng thử dán link khác hoặc liên hệ người phụ trách kỹ thuật.');
+    }
+  }
+
+  // --- PHÁT HLS / MP4 NATIVE ---
+  function playHlsStream(url) {
+    activePlayerType = 'hls';
+    if (badgeText) badgeText.textContent = 'VTV TRỰC TIẾP';
+
+    // Tạm dừng YouTube nếu đang phát
+    if (ytPlayer && typeof ytPlayer.pauseVideo === 'function') {
+      try { ytPlayer.pauseVideo(); } catch (e) {}
+    }
+    // Dừng Webview nếu đang chạy
+    const wv = document.getElementById('vtv-webview');
+    if (wv) {
+      try { wv.src = 'about:blank'; } catch (e) {}
+    }
+
+    if (ytWrap) ytWrap.style.display = 'none';
+    if (webWrap) webWrap.style.display = 'none';
+    if (hlsWrap) hlsWrap.style.display = 'flex';
+
+    if (hlsInstance) {
+      try { hlsInstance.destroy(); } catch (e) {}
+      hlsInstance = null;
+    }
+
+    if (typeof Hls !== 'undefined' && Hls.isSupported()) {
+      hlsInstance = new Hls({
+        enableWorker: true,
+        lowLatencyMode: true,
+        backBufferLength: 30
+      });
+
+      hlsInstance.on(Hls.Events.ERROR, function(event, data) {
+        console.warn('[HLS Stream] Error:', data);
+        if (data.fatal) {
+          switch (data.type) {
+            case Hls.ErrorTypes.NETWORK_ERROR:
+              showError('Không phát được link này, vui lòng thử dán link khác hoặc liên hệ người phụ trách kỹ thuật.');
+              break;
+            case Hls.ErrorTypes.MEDIA_ERROR:
+              hlsInstance.recoverMediaError();
+              break;
+            default:
+              showError('Không phát được link này, vui lòng thử dán link khác hoặc liên hệ người phụ trách kỹ thuật.');
+              try { hlsInstance.destroy(); } catch(e) {}
+              break;
+          }
+        }
+      });
+
+      hlsInstance.on(Hls.Events.MANIFEST_PARSED, function() {
+        showLoading(false);
+        hideError();
+        video.play().catch(err => {
+          console.warn('[HLS Stream] Chờ tương tác phát tiếng:', err);
+        });
+      });
+
+      hlsInstance.loadSource(url);
+      hlsInstance.attachMedia(video);
+
+    } else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+      video.src = url;
+      video.addEventListener('loadedmetadata', function() {
+        showLoading(false);
+        hideError();
+        video.play().catch(e => console.warn(e));
+      }, { once: true });
+      video.addEventListener('error', function() {
+        showError('Không phát được link này, vui lòng thử dán link khác hoặc liên hệ người phụ trách kỹ thuật.');
+      }, { once: true });
+    } else {
+      showError('Trình duyệt không hỗ trợ thư viện giải mã HLS (hls.js).');
+    }
+  }
+
+  window.retryStream = function() {
+    hideError();
+    showLoading(true, 'Đang thử lại...');
+    setTimeout(() => {
+      playAnyStream(currentRawUrl || getQueryUrl());
+    }, 300);
+  };
+
+  // --- LẮNG NGHE LỆNH TỪ ELECTRON IPC ---
+  if (typeof window !== 'undefined' && window.require) {
+    try {
+      const { ipcRenderer } = window.require('electron');
+      if (ipcRenderer) {
+        ipcRenderer.on('load-vtv-stream', (event, url) => {
+          if (url) playAnyStream(url);
+        });
+        ipcRenderer.on('pause-vtv-stream', () => {
+          if (activePlayerType === 'youtube' && ytPlayer && typeof ytPlayer.pauseVideo === 'function') {
+            try { ytPlayer.pauseVideo(); } catch (e) {}
+          } else if (activePlayerType === 'web') {
+            const wv = document.getElementById('vtv-webview');
+            if (wv) wv.executeJavaScript("document.querySelectorAll('video, audio').forEach(el => el.pause());").catch(()=>{});
+          } else if (video && !video.paused) {
+            video.pause();
+          }
+        });
+        ipcRenderer.on('resume-vtv-stream', () => {
+          if (activePlayerType === 'youtube' && ytPlayer && typeof ytPlayer.playVideo === 'function') {
+            try { ytPlayer.playVideo(); } catch (e) {}
+          } else if (activePlayerType === 'web') {
+            const wv = document.getElementById('vtv-webview');
+            if (wv) wv.executeJavaScript("document.querySelectorAll('video, audio').forEach(el => el.play());").catch(()=>{});
+          } else if (video && video.paused) {
+            video.play().catch(e => console.warn(e));
+          }
+        });
+      }
+    } catch(e) {}
+  }
+
+  // Lắng nghe postMessage nếu mở qua window.open
+  window.addEventListener('message', (event) => {
+    if (event.data && event.data.action === 'load-vtv-stream' && event.data.url) {
+      playAnyStream(event.data.url);
+    } else if (event.data && event.data.action === 'pause') {
+      if (activePlayerType === 'youtube' && ytPlayer && typeof ytPlayer.pauseVideo === 'function') {
+        ytPlayer.pauseVideo();
+      } else if (activePlayerType === 'web') {
+        const wv = document.getElementById('vtv-webview');
+        if (wv) wv.executeJavaScript("document.querySelectorAll('video, audio').forEach(el => el.pause());").catch(()=>{});
+      } else if (video && !video.paused) {
+        video.pause();
+      }
+    } else if (event.data && event.data.action === 'resume') {
+      if (activePlayerType === 'youtube' && ytPlayer && typeof ytPlayer.playVideo === 'function') {
+        ytPlayer.playVideo();
+      } else if (activePlayerType === 'web') {
+        const wv = document.getElementById('vtv-webview');
+        if (wv) wv.executeJavaScript("document.querySelectorAll('video, audio').forEach(el => el.play());").catch(()=>{});
+      } else if (video && video.paused) {
+        video.play().catch(e => console.warn(e));
+      }
+    }
+  });
+
+  // Phím tắt: 'F' toàn màn hình, 'Space' tạm dừng/tiếp tục
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'f' || e.key === 'F') {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {});
+      } else {
+        document.exitFullscreen().catch(err => {});
+      }
+    } else if (e.key === ' ' || e.code === 'Space') {
+      e.preventDefault();
+      if (activePlayerType === 'youtube' && ytPlayer && typeof ytPlayer.getPlayerState === 'function') {
+        const state = ytPlayer.getPlayerState();
+        if (state === 1) ytPlayer.pauseVideo();
+        else ytPlayer.playVideo();
+      } else if (activePlayerType === 'web') {
+        const wv = document.getElementById('vtv-webview');
+        if (wv) {
+          wv.executeJavaScript(`
+            (function() {
+              const v = document.querySelector('video');
+              if (v) {
+                if (v.paused) v.play();
+                else v.pause();
+              }
+            })();
+          `).catch(()=>{});
+        }
+      } else if (video) {
+        if (video.paused) video.play().catch(e => {});
+        else video.pause();
+      }
+    }
+  });
+
+  // Khởi chạy khi trang sẵn sàng
+  document.addEventListener('DOMContentLoaded', () => {
+    const initialUrl = getQueryUrl();
+    if (initialUrl) {
+      playAnyStream(decodeURIComponent(initialUrl));
+    }
+  });
+</script>
+
+</body>
+</html>
