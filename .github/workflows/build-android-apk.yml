@@ -38,6 +38,7 @@ jobs:
 
       - name: Sync Capacitor Android
         run: |
+          chmod +x mobile/android/gradlew
           cd mobile
           npx cap sync android
 
@@ -45,7 +46,7 @@ jobs:
         run: |
           cd mobile/android
           chmod +x ./gradlew
-          ./gradlew assembleDebug --stacktrace
+          ./gradlew assembleDebug --no-daemon --stacktrace
 
       - name: Rename APK for Distribution
         run: |
