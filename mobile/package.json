@@ -1,0 +1,21 @@
+{
+  "name": "gdqpan-mobile",
+  "version": "1.0.0",
+  "description": "GDQPAN Mobile App - Hệ Thống Thông Báo Tự Động",
+  "scripts": {
+    "build": "echo Web build ready",
+    "cap:sync": "cap sync",
+    "cap:open": "cap open android"
+  },
+  "author": "Trung tâm Giáo dục Quốc phòng và An ninh - ĐHQG-HCM",
+  "license": "MIT",
+  "dependencies": {
+    "@capacitor-community/keep-awake": "^8.0.1",
+    "@capacitor-community/text-to-speech": "^8.0.2",
+    "@capacitor/android": "^8.5.3",
+    "@capacitor/cli": "^8.5.3",
+    "@capacitor/core": "^8.5.3",
+    "@capacitor/filesystem": "^8.1.4",
+    "@capacitor/local-notifications": "^8.3.1"
+  }
+}

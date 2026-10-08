@@ -29,3 +29,12 @@ Sound/*.mov
 # IDE & Editor folders
 .vscode/
 .idea/
+
+# Android build outputs & local cache
+**/.gradle/
+**/build/
+**/local.properties
+Sound/*.mp4
+Sound/*.mov
+mobile/www/Sound/*.mp4
+mobile/www/Sound/*.mov

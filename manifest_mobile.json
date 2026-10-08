@@ -1,0 +1,28 @@
+{
+  "name": "GDQPAN - Hệ Thống Thông Báo Tự Động",
+  "short_name": "GDQPAN",
+  "author": "Trung Tâm Giáo Dục Quốc Phòng và An Ninh — ĐHQG-HCM",
+  "description": "Hệ thống phát thanh, báo động và sinh hoạt quân sự GDQPAN ĐHQG-HCM",
+  "start_url": "./mobile-prototype.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#07362b",
+  "theme_color": "#07362b",
+  "categories": ["utilities", "education", "productivity"],
+  "lang": "vi",
+  "icons": [
+    {
+      "src": "assets/logo_gdqpan.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/logo_gdqpan.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
