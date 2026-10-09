@@ -2,8 +2,8 @@
 node_modules/
 
 # Production & Packaging Build Output
-dist/
-GDQPAN/
+/dist/
+/GDQPAN/
 
 # Python cache & bytecode
 __pycache__/
