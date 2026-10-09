@@ -92,7 +92,7 @@ async function runTest() {
       }
 
       // 2. Kiểm tra Grid Sinh hoạt đủ số nút (9 nút)
-      const shCardCount = await page.$$eval('#grid-sinhhoat .sh-card', els => els.length);
+      const shCardCount = await page.$$eval('#sh-grid .sh-btn', els => els.length);
       if (shCardCount < 9) {
         console.error(`❌ [THẤT BẠI] Grid Sinh hoạt chỉ có ${shCardCount} nút (Kỳ vọng: 9 nút)`);
         totalFailures++;
@@ -110,8 +110,8 @@ async function runTest() {
       }
 
       // 4. Kiểm tra Time Picker: 24 mục giờ và 60 mục phút
-      const hoursCount = await page.$$eval('#wheel-hours .wheel-item', els => els.length);
-      const minutesCount = await page.$$eval('#wheel-minutes .wheel-item', els => els.length);
+      const hoursCount = await page.$$eval('#hour-col .picker-item', els => els.length);
+      const minutesCount = await page.$$eval('#minute-col .picker-item', els => els.length);
       if (hoursCount !== 24 || minutesCount !== 60) {
         console.error(`❌ [THẤT BẠI] Time picker không đủ mục: Giờ=${hoursCount} (cần 24), Phút=${minutesCount} (cần 60)`);
         totalFailures++;
@@ -120,7 +120,7 @@ async function runTest() {
       }
 
       // 5. Kiểm tra Danh sách lịch phát
-      const scheduleCount = await page.$$eval('#schedule-list .schedule-item', els => els.length);
+      const scheduleCount = await page.$$eval('#schedule-list-container .schedule-item', els => els.length);
       if (scheduleCount === 0) {
         console.error(`❌ [THẤT BẠI] Danh sách lịch phát trống (0 dòng)`);
         totalFailures++;

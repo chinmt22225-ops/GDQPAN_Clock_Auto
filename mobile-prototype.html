@@ -217,11 +217,14 @@
       overflow-y: auto;
       overscroll-behavior-y: contain;
       -webkit-overflow-scrolling: touch;
-      padding-bottom: calc(var(--nav-total-h) + 20px);
+      padding-bottom: 24px;
     }
     .tab-content.active {
       display: flex;
       flex-direction: column;
+    }
+    .tab-content > * {
+      flex-shrink: 0;
     }
 
     /* Note thông báo giới hạn nền tảng */
@@ -979,7 +982,7 @@
       </div>
     </nav>
     <div class="sidebar-footer">
-      Phiên bản 1.0.0 (Capacitor Ready)<br>
+      Phiên bản 1.0.0<br>
       © Trung tâm GDQPAN ĐHQG-HCM
     </div>
   </aside>
@@ -1151,10 +1154,6 @@
         <p>Cài đặt mốc thời gian phát hiệu lệnh</p>
       </div>
 
-      <div class="scheduler-note">
-        <strong>ℹ Lưu ý kỹ thuật:</strong> Khi chạy trên trình duyệt web di động, hẹn giờ có thể bị tạm dừng nếu khóa màn hình. Khi biên dịch sang ứng dụng native bằng Capacitor, tính năng Background Service & Local Notifications sẽ kích hoạt phát đúng giờ tuyệt đối.
-      </div>
-
       <!-- Form thêm lịch -->
       <div class="lp-form-card">
         <div class="lp-form-title">+ Thêm lịch phát mới</div>
@@ -1320,7 +1319,7 @@
               <div class="setting-row-label">Phiên bản ứng dụng</div>
               <div class="setting-row-sub">GDQPAN Auto Notify Mobile</div>
             </div>
-            <span style="font-size:12px;color:var(--green-dark);font-weight:700;">1.0.0-PRO</span>
+            <span style="font-size:12px;color:var(--green-dark);font-weight:700;">1.0.0 (Bản chính thức)</span>
           </div>
           <div class="setting-row">
             <div>
@@ -1402,6 +1401,166 @@ const Store = {
     }
   }
 };
+
+/* ============================================================
+   0.0. KHỞI TẠO BIẾN TRẠNG THÁI TOÀN CỤC (GLOBAL HOISTED STATE)
+   ============================================================ */
+const defaultAlarms = [
+  { id: 1, time: '05:30', action: 'Báo thức',          enabled: true  },
+  { id: 2, time: '07:00', action: 'Chuẩn bị làm việc', enabled: true  },
+  { id: 3, time: '07:15', action: 'Làm việc',          enabled: true  },
+  { id: 4, time: '09:00', action: 'Nghỉ giải lao',      enabled: true  },
+  { id: 5, time: '09:15', action: 'Hết giờ giải lao',  enabled: true  },
+  { id: 6, time: '11:15', action: 'Hết giờ làm việc',  enabled: true  },
+  { id: 7, time: '12:00', action: 'Ăn',                enabled: true  },
+  { id: 8, time: '17:00', action: 'Điểm danh',         enabled: true  },
+  { id: 9, time: '21:30', action: 'Ngủ',               enabled: true  },
+];
+
+let userSchedules = Store.get(Store.KEYS.SCHEDULES, defaultAlarms);
+
+const defaultHistory = [
+  { time: '05:30', name: 'Báo thức',          icon: '⏰', status: 'ok',  note: 'Phát tự động thành công' },
+  { time: '07:00', name: 'Chuẩn bị làm việc', icon: '🧹', status: 'ok',  note: 'Phát tự động thành công' },
+  { time: '07:15', name: 'Làm việc',          icon: '💼', status: 'ok',  note: 'Phát tự động thành công' },
+  { time: '09:00', name: 'Nghỉ giải lao',      icon: '☕', status: 'ok',  note: 'Phát tự động thành công' },
+];
+
+let historyData = Store.get(Store.KEYS.HISTORY, defaultHistory);
+let currentTab = 'home';
+let currentRegion = Store.get(Store.KEYS.REGION, 'bac');
+let currentGender = Store.get(Store.KEYS.GENDER, 'nam');
+let activeShIndex = -1;
+let toastTimer = null;
+let clockInterval = null;
+
+/* ============================================================
+   0.1. CAPACITOR NATIVE BRIDGE & BACKGROUND SCHEDULING
+   ============================================================ */
+const NativeBridge = (function () {
+  const isNative = () => typeof window.Capacitor !== 'undefined' && typeof window.Capacitor.isNativePlatform === 'function' && window.Capacitor.isNativePlatform();
+  const getPlugins = () => (window.Capacitor && window.Capacitor.Plugins) || {};
+
+  async function init() {
+    if (!isNative()) {
+      console.log('[NativeBridge] Đang chạy trên trình duyệt Web / PWA');
+      return;
+    }
+    console.log('[NativeBridge] Khởi tạo Capacitor Native trên', window.Capacitor.getPlatform());
+
+    // 1. Giữ màn hình sáng cho phòng trực (KeepAwake)
+    try {
+      const { KeepAwake } = getPlugins();
+      if (KeepAwake) {
+        await KeepAwake.keepAwake();
+        console.log('[NativeBridge] KeepAwake đã kích hoạt');
+      }
+    } catch (e) {
+      console.warn('[NativeBridge] KeepAwake warning:', e);
+    }
+
+    // 2. Xin quyền và đồng bộ Local Notifications
+    try {
+      const { LocalNotifications } = getPlugins();
+      if (LocalNotifications) {
+        const perm = await LocalNotifications.requestPermissions();
+        console.log('[NativeBridge] Quyền Notification:', perm);
+        await syncNativeAlarms();
+
+        LocalNotifications.addListener('localNotificationReceived', (notification) => {
+          console.log('[NativeBridge] Nhận thông báo lịch phát:', notification);
+          if (notification.extra && notification.extra.action) {
+            showToast(`🔔 [Lịch phát] ${notification.extra.action}`);
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('[NativeBridge] LocalNotifications warning:', e);
+    }
+  }
+
+  async function syncNativeAlarms() {
+    if (!isNative()) return;
+    try {
+      const { LocalNotifications } = getPlugins();
+      if (!LocalNotifications) return;
+
+      const pending = await LocalNotifications.getPending();
+      if (pending && pending.notifications && pending.notifications.length) {
+        await LocalNotifications.cancel({ notifications: pending.notifications });
+      }
+
+      const active = (typeof userSchedules !== 'undefined') ? userSchedules.filter(s => s.enabled !== false) : [];
+      const notifications = [];
+      const now = new Date();
+
+      active.forEach((sch, index) => {
+        const [hh, mm] = sch.time.split(':').map(Number);
+        const alarmDate = new Date();
+        alarmDate.setHours(hh, mm, 0, 0);
+
+        if (alarmDate.getTime() <= now.getTime()) {
+          alarmDate.setDate(alarmDate.getDate() + 1);
+        }
+
+        notifications.push({
+          title: `[GDQPAN] ${sch.action}`,
+          body: `Đã đến giờ: ${sch.time} - ${sch.action}`,
+          id: index + 101,
+          schedule: {
+            at: alarmDate,
+            allowWhileIdle: true
+          },
+          sound: 'alarm.wav',
+          extra: {
+            action: sch.action,
+            time: sch.time
+          }
+        });
+      });
+
+      if (notifications.length) {
+        await LocalNotifications.schedule({ notifications });
+        console.log(`[NativeBridge] Đã đồng bộ ${notifications.length} lịch phát vào Android Alarm`);
+      }
+    } catch (e) {
+      console.warn('[NativeBridge] syncNativeAlarms error:', e);
+    }
+  }
+
+  async function speakNative(text, options = {}) {
+    if (!isNative()) return false;
+    try {
+      const { TextToSpeech } = getPlugins();
+      if (TextToSpeech) {
+        await TextToSpeech.speak({
+          text: text,
+          lang: 'vi-VN',
+          rate: options.rate || 1.0,
+          pitch: options.pitch || 1.0,
+          volume: AudioEngine.getVolume(),
+          category: 'ambient'
+        });
+        return true;
+      }
+    } catch (e) {
+      console.warn('[NativeBridge] TextToSpeech native fallback:', e);
+    }
+    return false;
+  }
+
+  function stopNative() {
+    if (!isNative()) return;
+    try {
+      const { TextToSpeech } = getPlugins();
+      if (TextToSpeech) {
+        TextToSpeech.stop();
+      }
+    } catch (e) {}
+  }
+
+  return { isNative, init, syncNativeAlarms, speakNative, stopNative };
+})();
 
 /* ============================================================
    1. ĐỘNG CƠ ÂM THANH & BỘ TỔNG HỢP WEB AUDIO (REAL SYNTH)
@@ -1553,7 +1712,19 @@ const AudioEngine = (function () {
 const TTSEngine = (function () {
   let isSpeaking = false;
 
-  function speak(text, options = {}, callback) {
+  async function speak(text, options = {}, callback) {
+    // 1. Thử dùng plugin Native TTS trước nếu đang chạy trên thiết bị (Android/iOS)
+    if (NativeBridge && NativeBridge.isNative()) {
+      isSpeaking = true;
+      const success = await NativeBridge.speakNative(text, options);
+      isSpeaking = false;
+      if (success) {
+        if (callback) callback(true, null);
+        return;
+      }
+    }
+
+    // 2. Fallback sang Web Speech API trên trình duyệt Web
     if (!('speechSynthesis' in window)) {
       console.warn('[TTSEngine] Trình duyệt không hỗ trợ Web Speech API.');
       if (callback) callback(false, 'unsupported');
@@ -1597,6 +1768,9 @@ const TTSEngine = (function () {
   }
 
   function stop() {
+    if (NativeBridge && NativeBridge.isNative()) {
+      NativeBridge.stopNative();
+    }
     if ('speechSynthesis' in window) {
       try { window.speechSynthesis.cancel(); } catch (e) {}
     }
@@ -1641,27 +1815,9 @@ function updateClock() {
   updateAlarmCountdown(now);
 }
 
-// Khởi chạy clock interval
-setInterval(updateClock, 1000);
-updateClock();
-
 /* ============================================================
    4. TÍNH TOÁN LỊCH PHÁT TIẾP THEO (TÍNH ĐÚNG BƯỚC QUA NỬA ĐÊM)
    ============================================================ */
-const defaultAlarms = [
-  { id: 1, time: '05:30', action: 'Báo thức',          enabled: true  },
-  { id: 2, time: '07:00', action: 'Chuẩn bị làm việc', enabled: true  },
-  { id: 3, time: '07:15', action: 'Làm việc',          enabled: true  },
-  { id: 4, time: '09:00', action: 'Nghỉ giải lao',      enabled: true  },
-  { id: 5, time: '09:15', action: 'Hết giờ giải lao',  enabled: true  },
-  { id: 6, time: '11:15', action: 'Hết giờ làm việc',  enabled: true  },
-  { id: 7, time: '12:00', action: 'Ăn',                enabled: true  },
-  { id: 8, time: '17:00', action: 'Điểm danh',         enabled: true  },
-  { id: 9, time: '21:30', action: 'Ngủ',               enabled: true  },
-];
-
-let userSchedules = Store.get(Store.KEYS.SCHEDULES, defaultAlarms);
-
 function updateAlarmCountdown(now) {
   const activeSchedules = userSchedules.filter(s => s.enabled !== false);
   const nextTimeEl = document.getElementById('next-alarm-time');
@@ -1731,37 +1887,43 @@ function updateAlarmCountdown(now) {
 /* ============================================================
    5. THANH ÂM LƯỢNG (PERSISTENCE & ĐIỀU KHIỂN ĐỒNG BỘ)
    ============================================================ */
-const volSlider = document.getElementById('vol-slider');
-const volPct    = document.getElementById('vol-pct');
-const volIcon   = document.getElementById('vol-icon');
-
 function initVolume() {
-  const savedVol = Store.get(Store.KEYS.VOLUME, 75);
+  const volSlider = document.getElementById('vol-slider');
+  const volPct    = document.getElementById('vol-pct');
+  const volIcon   = document.getElementById('vol-icon');
+  const savedVol  = Store.get(Store.KEYS.VOLUME, 75);
   if (volSlider) volSlider.value = savedVol;
   if (volPct) volPct.textContent = savedVol + '%';
+  if (volIcon) {
+    if (savedVol === 0) volIcon.textContent = '🔇';
+    else if (savedVol < 40) volIcon.textContent = '🔉';
+    else volIcon.textContent = '🔊';
+  }
   AudioEngine.setVolume(savedVol / 100);
 }
-initVolume();
 
-if (volSlider) {
-  volSlider.addEventListener('input', function() {
-    const val = parseInt(this.value, 10);
-    if (volPct) volPct.textContent = val + '%';
-    if (volIcon) {
-      if (val === 0) volIcon.textContent = '🔇';
-      else if (val < 40) volIcon.textContent = '🔉';
-      else volIcon.textContent = '🔊';
-    }
-    AudioEngine.setVolume(val / 100);
-    Store.set(Store.KEYS.VOLUME, val);
-  });
+function bindVolumeEvents() {
+  const volSlider = document.getElementById('vol-slider');
+  if (volSlider) {
+    volSlider.addEventListener('input', function() {
+      const val = parseInt(this.value, 10);
+      const volPct  = document.getElementById('vol-pct');
+      const volIcon = document.getElementById('vol-icon');
+      if (volPct) volPct.textContent = val + '%';
+      if (volIcon) {
+        if (val === 0) volIcon.textContent = '🔇';
+        else if (val < 40) volIcon.textContent = '🔉';
+        else volIcon.textContent = '🔊';
+      }
+      AudioEngine.setVolume(val / 100);
+      Store.set(Store.KEYS.VOLUME, val);
+    });
+  }
 }
 
 /* ============================================================
    6. QUẢN LÝ TAB & NAVIGATION
    ============================================================ */
-let currentTab = 'home';
-
 function switchTab(tabId) {
   document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
   const target = document.getElementById('tab-' + tabId);
@@ -1839,7 +2001,6 @@ function renderTimeline() {
     container.appendChild(tli);
   });
 }
-renderTimeline();
 
 // Đồng bộ cập nhật timeline ngay tại giây :00 của mỗi phút
 function scheduleTimelineSync() {
@@ -1850,7 +2011,6 @@ function scheduleTimelineSync() {
     setInterval(renderTimeline, 60000);
   }, Math.max(100, msToNextMin));
 }
-scheduleTimelineSync();
 
 /* ============================================================
    8. CHẾ ĐỘ SINH HOẠT & HIỆU LỆNH QUÂN SỰ
@@ -1866,8 +2026,6 @@ const shData = [
   { icon: '🍽', name: 'Ăn',                time: '12:00', voice: 'Đã đến giờ ăn cơm. Các đơn vị tổ chức cơ động xuống nhà ăn.' },
   { icon: '📋', name: 'Điểm danh',         time: '17:00', voice: 'Đã đến giờ điểm danh quân số. Đề nghị chỉ huy các đơn vị tiến hành điểm danh.' },
 ];
-
-let activeShIndex = -1;
 
 function renderShGrid() {
   const grid = document.getElementById('sh-grid');
@@ -1914,7 +2072,6 @@ function renderShGrid() {
     grid.appendChild(btn);
   });
 }
-renderShGrid();
 
 /* ============================================================
    9. TIME PICKER CON LĂN IOS (DETERMINISTIC & SMOOTH)
@@ -2000,10 +2157,6 @@ function getPickerValue(colId, maxCount) {
   return Math.max(0, Math.min(maxCount - 1, Math.round(col.scrollTop / ITEM_HEIGHT)));
 }
 
-// Khởi tạo cột Giờ (0-23) và cột Phút (0-59)
-buildPickerCol('hour-col', 'hour-inner', 24);
-buildPickerCol('minute-col', 'minute-inner', 60);
-
 /* ============================================================
    10. QUẢN LÝ LỊCH PHÁT (PERSISTED SCHEDULES)
    ============================================================ */
@@ -2042,7 +2195,6 @@ function renderScheduleList() {
     container.appendChild(item);
   });
 }
-renderScheduleList();
 
 // Event delegation cho thao tác xóa và toggle lịch phát
 const schedContainer = document.getElementById('schedule-list-container');
@@ -2088,6 +2240,7 @@ function addSchedule() {
   Store.set(Store.KEYS.SCHEDULES, userSchedules);
   renderScheduleList();
   updateAlarmCountdown(new Date());
+  if (typeof NativeBridge !== 'undefined') NativeBridge.syncNativeAlarms();
 
   showToast(`✓ Đã thêm lịch: ${timeStr} – ${action}`);
   if (select) select.value = '';
@@ -2099,6 +2252,7 @@ function toggleSchedule(id, isEnabled) {
     target.enabled = isEnabled;
     Store.set(Store.KEYS.SCHEDULES, userSchedules);
     updateAlarmCountdown(new Date());
+    if (typeof NativeBridge !== 'undefined') NativeBridge.syncNativeAlarms();
     showToast(isEnabled ? '✓ Đã kích hoạt lịch' : '✗ Đã tạm tắt lịch');
   }
 }
@@ -2115,6 +2269,7 @@ function deleteSchedule(id) {
     Store.set(Store.KEYS.SCHEDULES, userSchedules);
     renderScheduleList();
     updateAlarmCountdown(new Date());
+    if (typeof NativeBridge !== 'undefined') NativeBridge.syncNativeAlarms();
     showToast('🗑 Đã xóa lịch phát');
   }, 200);
 }
@@ -2122,15 +2277,6 @@ function deleteSchedule(id) {
 /* ============================================================
    11. NHẬT KÝ HOẠT ĐỘNG (LỊCH SỬ)
    ============================================================ */
-const defaultHistory = [
-  { time: '05:30', name: 'Báo thức',          icon: '⏰', status: 'ok',  note: 'Phát tự động thành công' },
-  { time: '07:00', name: 'Chuẩn bị làm việc', icon: '🧹', status: 'ok',  note: 'Phát tự động thành công' },
-  { time: '07:15', name: 'Làm việc',          icon: '💼', status: 'ok',  note: 'Phát tự động thành công' },
-  { time: '09:00', name: 'Nghỉ giải lao',      icon: '☕', status: 'ok',  note: 'Phát tự động thành công' },
-];
-
-let historyData = Store.get(Store.KEYS.HISTORY, defaultHistory);
-
 function renderHistory() {
   const list = document.getElementById('ls-list');
   if (!list) return;
@@ -2156,34 +2302,34 @@ function renderHistory() {
     list.appendChild(el);
   });
 }
-renderHistory();
 
 function addLogItem(name, icon, status, note) {
-  const cfgLog = document.getElementById('cfg-log-history');
-  if (cfgLog && !cfgLog.checked) return;
+  try {
+    const cfgLog = document.getElementById('cfg-log-history');
+    if (cfgLog && !cfgLog.checked) return;
 
-  const now = new Date();
-  const timeStr = `${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
-  historyData.unshift({
-    time: timeStr,
-    name: name,
-    icon: icon || '📢',
-    status: status,
-    note: note || 'Phát hiệu lệnh thủ công'
-  });
+    const now = new Date();
+    const timeStr = `${pad2(now.getHours())}:${pad2(now.getMinutes())}`;
+    historyData.unshift({
+      time: timeStr,
+      name: name,
+      icon: icon || '📢',
+      status: status,
+      note: note || 'Phát hiệu lệnh thủ công'
+    });
 
-  // Giữ tối đa 50 bản ghi
-  if (historyData.length > 50) historyData = historyData.slice(0, 50);
-  Store.set(Store.KEYS.HISTORY, historyData);
-  renderHistory();
+    // Giữ tối đa 50 bản ghi
+    if (historyData.length > 50) historyData = historyData.slice(0, 50);
+    Store.set(Store.KEYS.HISTORY, historyData);
+    renderHistory();
+  } catch (err) {
+    console.warn('[Log] Lỗi addLogItem không gây gián đoạn:', err);
+  }
 }
 
 /* ============================================================
    12. CÀI ĐẶT: CHỌN GIỌNG ĐỌC VÀ PHÁT VĂN BẢN
    ============================================================ */
-let currentRegion = Store.get(Store.KEYS.REGION, 'bac');
-let currentGender = Store.get(Store.KEYS.GENDER, 'nam');
-
 function initVoiceSettings() {
   document.querySelectorAll('#region-seg .seg-btn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.val === currentRegion);
@@ -2212,7 +2358,6 @@ function initVoiceSettings() {
   const txtArea = document.getElementById('notify-text');
   if (txtArea && savedTxt) txtArea.value = savedTxt;
 }
-initVoiceSettings();
 
 function playNotify() {
   const txtArea = document.getElementById('notify-text');
@@ -2254,7 +2399,11 @@ function playNotify() {
 function handleFuncCard(el, name) {
   AudioEngine.stopAll();
   showToast(`▶ Đang phát: ${name}`);
-  addLogItem(name, '🔔', 'ok', 'Kích hoạt từ màn hình chính');
+  try {
+    addLogItem(name, '🔔', 'ok', 'Kích hoạt từ màn hình chính');
+  } catch (e) {
+    console.warn('[Log] Lỗi addLogItem không gây gián đoạn:', e);
+  }
 
   if (name.includes('Chào cờ')) {
     AudioEngine.playChime(() => {
@@ -2274,7 +2423,11 @@ function handleFuncCard(el, name) {
 function handleEmergency() {
   AudioEngine.stopAll();
   showToast('🚨 PHÁT KHẨN CẤP – ƯU TIÊN CAO NHẤT!');
-  addLogItem('Báo động khẩn cấp', '🚨', 'ok', 'Hú còi & khẩu lệnh khẩn');
+  try {
+    addLogItem('Báo động khẩn cấp', '🚨', 'ok', 'Hú còi & khẩu lệnh khẩn');
+  } catch (e) {
+    console.warn('[Log] Lỗi addLogItem không gây gián đoạn:', e);
+  }
 
   const cfgSiren = document.getElementById('cfg-siren-emergency');
   const shouldSiren = !cfgSiren || cfgSiren.checked;
@@ -2311,12 +2464,10 @@ function restoreSystemSettings() {
   if (c3 && s.sirenEmergency !== undefined) c3.checked = s.sirenEmergency;
   if (c4 && s.logHistory !== undefined) c4.checked = s.logHistory;
 }
-restoreSystemSettings();
 
 /* ============================================================
    14. TOAST NOTIFICATION THỐNG NHẤT
    ============================================================ */
-let toastTimer = null;
 function showToast(msg) {
   const toast = document.getElementById('toast');
   if (!toast) return;
@@ -2393,7 +2544,97 @@ document.addEventListener('visibilitychange', function () {
 window.addEventListener('pageshow', handleAppResume);
 window.addEventListener('focus', handleAppResume);
 
-console.log('[GDQPAN] Prototype Mobile Hardening hoàn tất – Sẵn sàng chuyển giao.');
+/* ============================================================
+   18. UNIFIED BOOT SEQUENCE (CHỐNG LỖI TDZ & SẬP KHỞI ĐỘNG)
+   ============================================================ */
+function boot() {
+  console.log('[GDQPAN] Khởi động hệ thống Mobile Engine...');
+
+  // 1. Phục hồi cấu hình hệ thống
+  try {
+    restoreSystemSettings();
+  } catch (e) {
+    console.warn('[Boot] Lỗi restoreSystemSettings:', e);
+  }
+
+  // 2. Khởi tạo và gắn sự kiện âm lượng
+  try {
+    initVolume();
+    bindVolumeEvents();
+  } catch (e) {
+    console.warn('[Boot] Lỗi initVolume/bindVolumeEvents:', e);
+  }
+
+  // 3. Khởi tạo chọn giọng đọc
+  try {
+    initVoiceSettings();
+  } catch (e) {
+    console.warn('[Boot] Lỗi initVoiceSettings:', e);
+  }
+
+  // 4. Khởi tạo chế độ sinh hoạt
+  try {
+    renderShGrid();
+  } catch (e) {
+    console.warn('[Boot] Lỗi renderShGrid:', e);
+  }
+
+  // 5. Khởi tạo danh sách lịch phát
+  try {
+    renderScheduleList();
+  } catch (e) {
+    console.warn('[Boot] Lỗi renderScheduleList:', e);
+  }
+
+  // 6. Khởi tạo Time picker (24h, 60m)
+  try {
+    buildPickerCol('hour-col', 'hour-inner', 24);
+    buildPickerCol('minute-col', 'minute-inner', 60);
+  } catch (e) {
+    console.warn('[Boot] Lỗi buildPickerCol:', e);
+  }
+
+  // 7. Khởi tạo Timeline hôm nay
+  try {
+    renderTimeline();
+    scheduleTimelineSync();
+  } catch (e) {
+    console.warn('[Boot] Lỗi timeline:', e);
+  }
+
+  // 8. Khởi tạo nhật ký hoạt động
+  try {
+    renderHistory();
+  } catch (e) {
+    console.warn('[Boot] Lỗi renderHistory:', e);
+  }
+
+  // 9. Khởi tạo đồng hồ thời gian thực và countdown
+  try {
+    updateClock();
+    if (clockInterval) clearInterval(clockInterval);
+    clockInterval = setInterval(updateClock, 1000);
+  } catch (e) {
+    console.warn('[Boot] Lỗi updateClock:', e);
+  }
+
+  // 10. Khởi tạo NativeBridge (nếu đang chạy trên Android/iOS)
+  try {
+    if (typeof NativeBridge !== 'undefined' && NativeBridge.init) {
+      NativeBridge.init();
+    }
+  } catch (e) {
+    console.warn('[Boot] Lỗi NativeBridge.init:', e);
+  }
+
+  console.log('[GDQPAN] Hệ thống đã khởi động an toàn và hoàn tất 100%!');
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', boot);
+} else {
+  boot();
+}
 </script>
 </body>
 </html>
