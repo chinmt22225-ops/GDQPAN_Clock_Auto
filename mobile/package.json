@@ -4,6 +4,7 @@
   "description": "GDQPAN Mobile App - Hệ Thống Thông Báo Tự Động",
   "scripts": {
     "build": "echo Web build ready",
+    "test": "node tests/startup.test.js",
     "cap:sync": "cap sync",
     "cap:open": "cap open android"
   },
@@ -17,5 +18,8 @@
     "@capacitor/core": "^8.5.3",
     "@capacitor/filesystem": "^8.1.4",
     "@capacitor/local-notifications": "^8.3.1"
+  },
+  "devDependencies": {
+    "puppeteer-core": "^25.13.0"
   }
 }

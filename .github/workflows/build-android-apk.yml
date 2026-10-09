@@ -35,6 +35,10 @@ jobs:
         working-directory: mobile
         run: npm install
 
+      - name: Run Startup Verification Tests
+        working-directory: mobile
+        run: npm test
+
       - name: Sync Capacitor Android
         working-directory: mobile
         run: |
