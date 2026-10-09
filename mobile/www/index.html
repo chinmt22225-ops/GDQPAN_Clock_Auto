@@ -2,12 +2,13 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="theme-color" content="#07362b" />
   <meta name="format-detection" content="telephone=no" />
   <title>GDQPAN – Hệ Thống Thông Báo Tự Động</title>
+  <script src="capacitor.js"></script>
 
   <style>
     /* ================================================
@@ -718,31 +719,32 @@
     .si-name { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
     .si-body { flex: 1; }
 
-    /* Toggle switch accessible */
+    /* Toggle switch accessible (min 44-48dp touch target) */
     .toggle {
-      position: relative; width: 44px; height: 26px; flex-shrink: 0;
-      display: inline-block;
+      position: relative; width: 48px; height: 28px; flex-shrink: 0;
+      display: inline-flex; align-items: center;
     }
     .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
     .toggle-slider {
       position: absolute; inset: 0; background: var(--border);
-      border-radius: 13px; cursor: pointer; transition: 0.2s;
+      border-radius: 14px; cursor: pointer; transition: 0.2s;
     }
     .toggle-slider::before {
       content: ''; position: absolute;
-      width: 20px; height: 20px; background: #fff;
+      width: 22px; height: 22px; background: #fff;
       border-radius: 50%; bottom: 3px; left: 3px;
       transition: 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.2);
     }
     .toggle input:checked + .toggle-slider { background: var(--green-dark); }
-    .toggle input:checked + .toggle-slider::before { transform: translateX(18px); }
+    .toggle input:checked + .toggle-slider::before { transform: translateX(20px); }
 
     .btn-delete {
       background: var(--red); color: #fff;
       border: none; border-radius: 8px;
-      padding: 8px 12px; font-size: 12px; font-weight: 600;
+      padding: 8px 12px; font-size: 16px; font-weight: 600;
       cursor: pointer; flex-shrink: 0;
-      min-width: 36px; min-height: 36px;
+      min-width: 44px; min-height: 44px;
+      display: inline-flex; align-items: center; justify-content: center;
     }
 
     /* Empty state */
@@ -807,11 +809,11 @@
       margin-bottom: 14px;
     }
     .seg-btn {
-      flex: 1; padding: 8px 4px; text-align: center;
-      font-size: 12px; font-weight: 600; color: var(--text-muted);
+      flex: 1; padding: 10px 4px; text-align: center;
+      font-size: 13px; font-weight: 700; color: var(--text-muted);
       border-radius: 8px; cursor: pointer; transition: var(--transition);
       user-select: none; border: none; background: transparent;
-      min-height: 38px;
+      min-height: 44px; display: inline-flex; align-items: center; justify-content: center;
     }
     .seg-btn.active {
       background: var(--green-dark); color: var(--yellow);
@@ -827,10 +829,10 @@
       display: flex; background: var(--bg); border-radius: 8px; padding: 2px;
     }
     .gender-opt {
-      padding: 6px 14px; font-size: 12px; font-weight: 600;
+      padding: 8px 16px; font-size: 13px; font-weight: 700;
       color: var(--text-muted); border-radius: 6px; cursor: pointer;
       transition: var(--transition); border: none; background: transparent;
-      min-height: 36px;
+      min-height: 44px; display: inline-flex; align-items: center; justify-content: center;
     }
     .gender-opt.active { background: var(--green-dark); color: var(--yellow); }
 
@@ -927,6 +929,125 @@
       #toast {
         bottom: calc(var(--safe-bot) + 20px);
       }
+    }
+
+    /* ================================================
+       THANH ĐANG PHÁT TOÀN CỤC (NOW PLAYING BAR)
+       ================================================ */
+    .now-playing-bar {
+      position: fixed;
+      bottom: calc(var(--nav-total-h) + 8px);
+      left: 12px;
+      right: 12px;
+      background: var(--green-dark);
+      color: #ffffff;
+      border: 1.5px solid var(--yellow);
+      border-radius: var(--radius-md);
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.35);
+      z-index: 180;
+    }
+    @media (min-width: 768px) {
+      .now-playing-bar {
+        bottom: calc(var(--safe-bot) + 16px);
+        left: calc(var(--sidebar-w) + 20px);
+        right: 20px;
+      }
+    }
+    .np-left { display: flex; align-items: center; gap: 10px; flex: 1; overflow: hidden; }
+    .np-wave { font-size: 20px; animation: pulse 1s infinite alternate; }
+    .np-meta { display: flex; flex-direction: column; overflow: hidden; }
+    .np-label { font-size: 9.5px; font-weight: 700; color: var(--yellow); letter-spacing: 0.5px; text-transform: uppercase; }
+    .np-name { font-size: 13.5px; font-weight: 700; color: #ffffff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .np-stop-btn {
+      background: var(--red);
+      color: #ffffff;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 800;
+      padding: 8px 14px;
+      min-height: 44px;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    /* ================================================
+       HỘP THOẠI XÁC NHẬN BÁO ĐỘNG (2-STEP CONFIRM)
+       ================================================ */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.65);
+      backdrop-filter: blur(4px);
+      z-index: 99999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .modal-box {
+      background: #ffffff;
+      border-radius: 16px;
+      max-width: 360px;
+      width: 100%;
+      padding: 24px 20px;
+      text-align: center;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+    }
+    .modal-em-icon { font-size: 46px; margin-bottom: 8px; }
+    .modal-em-title { font-size: 17px; font-weight: 800; color: var(--red); margin-bottom: 8px; }
+    .modal-em-desc { font-size: 13px; color: #4b5563; line-height: 1.5; margin-bottom: 20px; }
+    .modal-em-actions { display: flex; gap: 10px; }
+    .btn-em-cancel {
+      flex: 1;
+      padding: 12px;
+      min-height: 48px;
+      border: 1px solid #d1d5db;
+      background: #f3f4f6;
+      color: #374151;
+      border-radius: 8px;
+      font-weight: 700;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .btn-em-confirm {
+      flex: 1;
+      padding: 12px;
+      min-height: 48px;
+      border: none;
+      background: var(--red);
+      color: #ffffff;
+      border-radius: 8px;
+      font-weight: 800;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    /* Thanh xuất nhập lịch */
+    .schedule-io-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+    .btn-io {
+      flex: 1;
+      padding: 10px;
+      min-height: 44px;
+      background: #eef7f3;
+      border: 1px solid var(--green-light);
+      color: var(--green-dark);
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
     }
 
     /* ================================================
@@ -1068,16 +1189,16 @@
           <div class="func-arrow">›</div>
         </button>
         <!-- Card 2: Báo động -->
-        <button type="button" class="func-card fc-orange" onclick="handleFuncCard(this,'Báo động')">
+        <button type="button" class="func-card fc-orange" onclick="openEmergencyConfirm('alarm_card', 'XÁC NHẬN BÁO ĐỘNG TÁC CHIẾN', 'Bạn có chắc chắn muốn kích hoạt còi báo động tác chiến toàn đơn vị không?')">
           <div class="func-icon-wrap">🚨</div>
           <div class="func-card-body">
             <div class="func-card-name">BÁO ĐỘNG</div>
-            <div class="func-card-sub">Còi tác chiến</div>
+            <div class="func-card-sub">Còi tác chiến (Xác nhận)</div>
           </div>
           <div class="func-arrow">›</div>
         </button>
         <!-- Card 3: Thông báo khác -->
-        <button type="button" class="func-card fc-amber" onclick="switchTab('caidat')">
+        <button type="button" class="func-card fc-amber" onclick="switchTab('caidat'); focusNotifyInput();">
           <div class="func-icon-wrap">📢</div>
           <div class="func-card-body">
             <div class="func-card-name">THÔNG BÁO</div>
@@ -1121,7 +1242,7 @@
       </div>
 
       <!-- Banner khẩn cấp -->
-      <button type="button" class="emergency-banner" onclick="handleEmergency()">
+      <button type="button" class="emergency-banner" onclick="openEmergencyConfirm('emergency', 'XÁC NHẬN PHÁT KHẨN CẤP', 'Bạn có chắc chắn muốn kích hoạt còi báo động khẩn cấp và hiệu lệnh ưu tiên cao nhất toàn đơn vị không?')">
         <div class="em-icon">🔔</div>
         <div>
           <h3>PHÁT KHẨN CẤP</h3>
@@ -1203,6 +1324,13 @@
         </select>
 
         <button type="button" class="btn-add-schedule" onclick="addSchedule()">+ THÊM LỊCH MỚI</button>
+      </div>
+
+      <!-- Thanh xuất nhập dữ liệu lịch JSON -->
+      <div class="schedule-io-bar">
+        <button type="button" class="btn-io" onclick="exportSchedulesJSON()">📥 Xuất lịch (JSON)</button>
+        <button type="button" class="btn-io" onclick="document.getElementById('import-schedule-file').click()">📤 Nhập lịch (JSON)</button>
+        <input type="file" id="import-schedule-file" accept=".json,application/json" style="display:none;" onchange="importSchedulesJSON(this)" />
       </div>
 
       <!-- Danh sách lịch phát -->
@@ -1362,6 +1490,31 @@
 <!-- Toast notification độc lập -->
 <div id="toast" role="status" aria-live="polite"></div>
 
+<!-- Thanh Đang phát cố định toàn cục -->
+<div id="now-playing-bar" class="now-playing-bar" style="display:none;" aria-live="polite">
+  <div class="np-left">
+    <span class="np-wave">🔊</span>
+    <div class="np-meta">
+      <span class="np-label">ĐANG PHÁT HIỆU LỆNH</span>
+      <span class="np-name" id="np-name">...</span>
+    </div>
+  </div>
+  <button type="button" class="np-stop-btn" onclick="AudioEngine.stopAll()">⏹ DỪNG</button>
+</div>
+
+<!-- Modal xác nhận phát khẩn cấp / Báo động 2 bước (Chống chạm nhầm) -->
+<div id="confirm-emergency-modal" class="modal-backdrop" style="display:none;" role="dialog" aria-modal="true" aria-labelledby="modal-em-title">
+  <div class="modal-box">
+    <div class="modal-em-icon">🚨</div>
+    <h3 class="modal-em-title" id="modal-em-title">XÁC NHẬN BÁO ĐỘNG</h3>
+    <p class="modal-em-desc" id="modal-em-desc">Bạn có chắc chắn muốn kích hoạt còi báo động khẩn cấp ưu tiên cao nhất toàn đơn vị không?</p>
+    <div class="modal-em-actions">
+      <button type="button" class="btn-em-cancel" onclick="closeEmergencyConfirm()">HỦY BỎ</button>
+      <button type="button" class="btn-em-confirm" onclick="executeConfirmedEmergency()">XÁC NHẬN PHÁT</button>
+    </div>
+  </div>
+</div>
+
 <!-- ========================================================
      JAVASCRIPT: ARCHITECTURE & SYSTEM ENGINE
      ======================================================== -->
@@ -1373,8 +1526,8 @@
    ============================================================ */
 const Store = {
   KEYS: {
-    SCHEDULES: 'gdqpan_schedules_v1',
-    SETTINGS:  'gdqpan_settings_v1',
+    SCHEDULES: 'gdqpan_schedules_v3',
+    SETTINGS:  'gdqpan_settings_v2',
     VOLUME:    'gdqpan_volume_v1',
     REGION:    'gdqpan_voice_region_v1',
     GENDER:    'gdqpan_voice_gender_v1',
@@ -1406,33 +1559,50 @@ const Store = {
    0.0. KHỞI TẠO BIẾN TRẠNG THÁI TOÀN CỤC (GLOBAL HOISTED STATE)
    ============================================================ */
 const defaultAlarms = [
-  { id: 1, time: '05:30', action: 'Báo thức',          enabled: true  },
-  { id: 2, time: '07:00', action: 'Chuẩn bị làm việc', enabled: true  },
-  { id: 3, time: '07:15', action: 'Làm việc',          enabled: true  },
-  { id: 4, time: '09:00', action: 'Nghỉ giải lao',      enabled: true  },
-  { id: 5, time: '09:15', action: 'Hết giờ giải lao',  enabled: true  },
-  { id: 6, time: '11:15', action: 'Hết giờ làm việc',  enabled: true  },
-  { id: 7, time: '12:00', action: 'Ăn',                enabled: true  },
-  { id: 8, time: '17:00', action: 'Điểm danh',         enabled: true  },
-  { id: 9, time: '21:30', action: 'Ngủ',               enabled: true  },
+  { id: 1, time: '05:30', action: 'Báo thức',          on: true, days: [1,2,3,4,5,6,0] },
+  { id: 2, time: '05:45', action: 'Thể dục sáng',      on: true, days: [1,2,3,4,5,6,0] },
+  { id: 3, time: '07:00', action: 'Chuẩn bị làm việc', on: true, days: [1,2,3,4,5,6,0] },
+  { id: 4, time: '07:15', action: 'Làm việc',          on: true, days: [1,2,3,4,5,6,0] },
+  { id: 5, time: '09:00', action: 'Nghỉ giải lao',      on: true, days: [1,2,3,4,5,6,0] },
+  { id: 6, time: '09:15', action: 'Hết giờ giải lao',  on: true, days: [1,2,3,4,5,6,0] },
+  { id: 7, time: '11:15', action: 'Hết giờ làm việc',  on: true, days: [1,2,3,4,5,6,0] },
+  { id: 8, time: '12:00', action: 'Ăn',                on: true, days: [1,2,3,4,5,6,0] },
+  { id: 9, time: '17:00', action: 'Điểm danh',         on: true, days: [1,2,3,4,5,6,0] },
+  { id: 10, time: '21:30', action: 'Ngủ',              on: true, days: [1,2,3,4,5,6,0] },
 ];
 
-let userSchedules = Store.get(Store.KEYS.SCHEDULES, defaultAlarms);
+function loadAndMigrateSchedules() {
+  const v3 = Store.get(Store.KEYS.SCHEDULES, null);
+  if (v3 && Array.isArray(v3) && v3.length) {
+    return v3.map(s => ({
+      ...s,
+      on: (s.on !== undefined ? s.on : (s.enabled !== false)),
+      days: Array.isArray(s.days) ? s.days : [1,2,3,4,5,6,0]
+    }));
+  }
+  const v1 = Store.get('gdqpan_schedules_v1', null);
+  if (v1 && Array.isArray(v1) && v1.length) {
+    const migrated = v1.map(s => ({
+      ...s,
+      on: (s.enabled !== false),
+      days: [1,2,3,4,5,6,0]
+    }));
+    Store.set(Store.KEYS.SCHEDULES, migrated);
+    return migrated;
+  }
+  Store.set(Store.KEYS.SCHEDULES, defaultAlarms);
+  return defaultAlarms;
+}
 
-const defaultHistory = [
-  { time: '05:30', name: 'Báo thức',          icon: '⏰', status: 'ok',  note: 'Phát tự động thành công' },
-  { time: '07:00', name: 'Chuẩn bị làm việc', icon: '🧹', status: 'ok',  note: 'Phát tự động thành công' },
-  { time: '07:15', name: 'Làm việc',          icon: '💼', status: 'ok',  note: 'Phát tự động thành công' },
-  { time: '09:00', name: 'Nghỉ giải lao',      icon: '☕', status: 'ok',  note: 'Phát tự động thành công' },
-];
-
-let historyData = Store.get(Store.KEYS.HISTORY, defaultHistory);
+let userSchedules = loadAndMigrateSchedules();
+let historyData = Store.get(Store.KEYS.HISTORY, []);
 let currentTab = 'home';
 let currentRegion = Store.get(Store.KEYS.REGION, 'bac');
 let currentGender = Store.get(Store.KEYS.GENDER, 'nam');
 let activeShIndex = -1;
 let toastTimer = null;
 let clockInterval = null;
+let pendingEmergencyAction = null;
 
 /* ============================================================
    0.1. CAPACITOR NATIVE BRIDGE & BACKGROUND SCHEDULING
@@ -1447,27 +1617,74 @@ const NativeBridge = (function () {
       return;
     }
     console.log('[NativeBridge] Khởi tạo Capacitor Native trên', window.Capacitor.getPlatform());
+    const plugins = getPlugins();
+    console.log('[NativeBridge] Tình trạng Plugin Native:', {
+      KeepAwake: !!plugins.KeepAwake,
+      LocalNotifications: !!plugins.LocalNotifications,
+      TextToSpeech: !!plugins.TextToSpeech,
+      Filesystem: !!plugins.Filesystem
+    });
 
-    // 1. Giữ màn hình sáng cho phòng trực (KeepAwake)
+    // 1. Giữ màn hình sáng cho phòng trực (Kiosk Mode)
     try {
-      const { KeepAwake } = getPlugins();
-      if (KeepAwake) {
-        await KeepAwake.keepAwake();
+      if (plugins.KeepAwake) {
+        await plugins.KeepAwake.keepAwake();
         console.log('[NativeBridge] KeepAwake đã kích hoạt');
       }
     } catch (e) {
       console.warn('[NativeBridge] KeepAwake warning:', e);
     }
 
-    // 2. Xin quyền và đồng bộ Local Notifications
+    // 2. Xử lý nút Back của Android (quay lại Home hoặc đóng Modal)
     try {
-      const { LocalNotifications } = getPlugins();
-      if (LocalNotifications) {
-        const perm = await LocalNotifications.requestPermissions();
+      if (plugins.App && plugins.App.addListener) {
+        plugins.App.addListener('backButton', ({ canGoBack }) => {
+          const modal = document.getElementById('confirm-emergency-modal');
+          if (modal && modal.style.display === 'flex') {
+            closeEmergencyConfirm();
+            return;
+          }
+          if (currentTab !== 'home') {
+            switchTab('home');
+            return;
+          }
+          if (canGoBack) {
+            window.history.back();
+          } else {
+            plugins.App.exitApp();
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('[NativeBridge] App backButton warning:', e);
+    }
+
+    // 3. Xin quyền và đồng bộ Local Notifications
+    try {
+      if (plugins.LocalNotifications) {
+        const perm = await plugins.LocalNotifications.requestPermissions();
         console.log('[NativeBridge] Quyền Notification:', perm);
+
+        // Tạo Notification Channel riêng có độ ưu tiên cao trên Android 8+
+        try {
+          if (plugins.LocalNotifications.createChannel) {
+            await plugins.LocalNotifications.createChannel({
+              id: 'gdqpan_alarm_channel',
+              name: 'Hiệu lệnh & Lịch phát GDQPAN',
+              description: 'Kênh thông báo hiệu lệnh báo thức và chế độ sinh hoạt',
+              importance: 5,
+              visibility: 1,
+              sound: 'alarm.wav',
+              vibration: true
+            });
+          }
+        } catch (chErr) {
+          console.warn('[NativeBridge] createChannel note:', chErr);
+        }
+
         await syncNativeAlarms();
 
-        LocalNotifications.addListener('localNotificationReceived', (notification) => {
+        plugins.LocalNotifications.addListener('localNotificationReceived', (notification) => {
           console.log('[NativeBridge] Nhận thông báo lịch phát:', notification);
           if (notification.extra && notification.extra.action) {
             showToast(`🔔 [Lịch phát] ${notification.extra.action}`);
@@ -1490,7 +1707,9 @@ const NativeBridge = (function () {
         await LocalNotifications.cancel({ notifications: pending.notifications });
       }
 
-      const active = (typeof userSchedules !== 'undefined') ? userSchedules.filter(s => s.enabled !== false) : [];
+      const active = (typeof userSchedules !== 'undefined')
+        ? userSchedules.filter(s => s.on !== false && s.enabled !== false)
+        : [];
       const notifications = [];
       const now = new Date();
 
@@ -1503,10 +1722,13 @@ const NativeBridge = (function () {
           alarmDate.setDate(alarmDate.getDate() + 1);
         }
 
+        const stableId = Math.abs(Number(sch.id) % 2147483647) || (index + 101);
+
         notifications.push({
           title: `[GDQPAN] ${sch.action}`,
           body: `Đã đến giờ: ${sch.time} - ${sch.action}`,
-          id: index + 101,
+          id: stableId,
+          channelId: 'gdqpan_alarm_channel',
           schedule: {
             at: alarmDate,
             allowWhileIdle: true
@@ -1569,7 +1791,61 @@ const AudioEngine = (function () {
   let ctx = null;
   let masterGain = null;
   let activeNodes = [];
+  let html5Audio = null;
   let currentVolume = (Store.get(Store.KEYS.VOLUME, 75)) / 100;
+
+  const DEFAULT_SOUND_MAP = {
+    'Chào cờ': 'Sound/QUỐC CA VIỆT NAM (không lời) bản chính thức không dính bản quyền.mp3',
+    'Quốc ca': 'Sound/QUỐC CA VIỆT NAM (không lời) bản chính thức không dính bản quyền.mp3',
+    'Quốc ca không lời': 'Sound/QUỐC CA VIỆT NAM (không lời) bản chính thức không dính bản quyền.mp3',
+    'Báo động': 'Sound/báo động.mp3',
+    'Phát khẩn cấp': 'Sound/báo động.mp3',
+    'Báo động khẩn cấp': 'Sound/báo động.mp3',
+    'Tập hợp': 'Sound/tập hợp.mp3',
+    'Báo thức': 'Sound/báo thức.mp3',
+    'Ăn': 'Sound/báo đi ăn.mp3',
+    'Báo đi ăn': 'Sound/báo đi ăn.mp3',
+    'Điểm danh': 'Sound/điểm danh.mp3',
+    'Ngủ': 'Sound/báo đi ngủ.mp3',
+    'Báo đi ngủ': 'Sound/báo đi ngủ.mp3',
+    'Duyệt đội ngũ': 'Sound/Duyệt đội ngũ.mp3',
+    'Nhạc truyền thống': 'Sound/NHẠC TRUYỀN THỐNG TRUNG TÂM.m4a',
+    'Nhạc truyền thống Trung tâm': 'Sound/NHẠC TRUYỀN THỐNG TRUNG TÂM.m4a',
+    'Nhạc hành khúc': 'Sound/NHẠC TRUYỀN THỐNG TRUNG TÂM.m4a'
+  };
+
+  const AI_VOICE_ACTION_MAP = {
+    'Báo thức': ['tmpl_baothuc', 'baothuc'],
+    'Thể dục sáng': ['tmpl_theducsang'],
+    'Chuẩn bị làm việc': ['tmpl_chuanbi'],
+    'Chuẩn bị': ['tmpl_chuanbi'],
+    'Làm việc': ['tmpl_lamviec'],
+    'Nghỉ giải lao': ['tmpl_nghigiailao'],
+    'Giải lao': ['tmpl_nghigiailao'],
+    'Hết giờ giải lao': ['tmpl_hetgiailao'],
+    'Hết giải lao': ['tmpl_hetgiailao'],
+    'Hết giờ làm việc': ['tmpl_hetlamviec'],
+    'Hết giờ': ['tmpl_hetlamviec'],
+    'Ăn': ['tmpl_an', 'an'],
+    'Điểm danh': ['tmpl_diemdanh', 'diemdanh'],
+    'Ngủ': ['tmpl_ngu', 'ngu', 'baongu'],
+    'Tập hợp': ['taphop'],
+    'Báo động': ['baodong']
+  };
+
+  function setNowPlaying(title) {
+    const bar = document.getElementById('now-playing-bar');
+    const nameEl = document.getElementById('np-name');
+    if (bar && nameEl) {
+      nameEl.textContent = title;
+      bar.style.display = 'flex';
+    }
+  }
+
+  function hideNowPlaying() {
+    const bar = document.getElementById('now-playing-bar');
+    if (bar) bar.style.display = 'none';
+  }
 
   function initCtx() {
     if (!ctx) {
@@ -1592,6 +1868,9 @@ const AudioEngine = (function () {
     if (masterGain && ctx) {
       masterGain.gain.setValueAtTime(currentVolume, ctx.currentTime);
     }
+    if (html5Audio) {
+      html5Audio.volume = currentVolume;
+    }
   }
 
   function getVolume() {
@@ -1606,9 +1885,106 @@ const AudioEngine = (function () {
       } catch (e) {}
     });
     activeNodes = [];
+    if (html5Audio) {
+      try {
+        html5Audio.pause();
+        html5Audio.currentTime = 0;
+      } catch (e) {}
+      html5Audio = null;
+    }
     if ('speechSynthesis' in window) {
       try { window.speechSynthesis.cancel(); } catch (e) {}
     }
+    if (typeof NativeBridge !== 'undefined' && NativeBridge.isNative()) {
+      NativeBridge.stopNative();
+    }
+    if (typeof activeShIndex !== 'undefined' && activeShIndex !== -1) {
+      activeShIndex = -1;
+      if (typeof renderShGrid === 'function') renderShGrid();
+    }
+    hideNowPlaying();
+  }
+
+  function playAudioFile(url, onEnd, onError) {
+    try {
+      stopAll();
+      const safeUrl = encodeURI(url);
+      html5Audio = new Audio(safeUrl);
+      html5Audio.volume = currentVolume;
+      html5Audio.onended = () => {
+        hideNowPlaying();
+        if (onEnd) onEnd();
+      };
+      html5Audio.onerror = (e) => {
+        console.warn('[AudioEngine] Không thể nạp file âm thanh:', url, e);
+        hideNowPlaying();
+        if (onError) onError(e);
+        else if (onEnd) onEnd();
+      };
+      html5Audio.play().then(() => {
+        const title = url.split('/').pop().replace(/\.[^/.]+$/, '');
+        setNowPlaying(decodeURIComponent(title));
+      }).catch(err => {
+        console.warn('[AudioEngine] Playback bị chặn:', err);
+        hideNowPlaying();
+        if (onError) onError(err);
+        else if (onEnd) onEnd();
+      });
+    } catch (e) {
+      console.warn('[AudioEngine] playAudioFile error:', e);
+      if (onError) onError(e);
+      else if (onEnd) onEnd();
+    }
+  }
+
+  function triggerActionSound(actionName, callback) {
+    setNowPlaying(actionName);
+    const reg = (typeof currentRegion !== 'undefined' && currentRegion) ? currentRegion : 'bac';
+    const gen = (typeof currentGender !== 'undefined' && currentGender) ? currentGender : 'nam';
+
+    function fallbackToStandard() {
+      const soundPath = DEFAULT_SOUND_MAP[actionName];
+      if (soundPath) {
+        playAudioFile(soundPath, callback, () => {
+          playChime(() => {
+            TTSEngine.speak(`Hiệu lệnh: ${actionName}`, { rate: 1.0 }, callback);
+          });
+        });
+        return;
+      }
+
+      playChime(() => {
+        TTSEngine.speak(`Hiệu lệnh: ${actionName}`, { rate: 1.0 }, () => {
+          hideNowPlaying();
+          if (callback) callback();
+        });
+      });
+    }
+
+    const prefixes = AI_VOICE_ACTION_MAP[actionName];
+    if (prefixes) {
+      const prefixList = Array.isArray(prefixes) ? prefixes : [prefixes];
+      let pIdx = 0;
+
+      function tryNextPrefix() {
+        if (pIdx >= prefixList.length) {
+          fallbackToStandard();
+          return;
+        }
+        const pref = prefixList[pIdx++];
+        const aiPath = `Sound/ai_voices/${pref}_${reg}_${gen}.mp3`;
+        playAudioFile(aiPath, () => {
+          if (callback) callback();
+        }, () => {
+          tryNextPrefix();
+        });
+      }
+
+      tryNextPrefix();
+      return;
+    }
+
+    fallbackToStandard();
   }
 
   /**
@@ -1626,7 +2002,7 @@ const AudioEngine = (function () {
       const gain2 = audioCtx.createGain();
 
       osc1.type = 'sine';
-      osc1.frequency.setValueAtTime(880, now); // nốt A5
+      osc1.frequency.setValueAtTime(880, now);
       gain1.gain.setValueAtTime(currentVolume * 0.7, now);
       gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
 
@@ -1634,7 +2010,7 @@ const AudioEngine = (function () {
       gain1.connect(masterGain);
 
       osc2.type = 'sine';
-      osc2.frequency.setValueAtTime(659.25, now + 0.35); // nốt E5
+      osc2.frequency.setValueAtTime(659.25, now + 0.35);
       gain2.gain.setValueAtTime(currentVolume * 0.8, now + 0.35);
       gain2.gain.exponentialRampToValueAtTime(0.001, now + 1.1);
 
@@ -1703,7 +2079,7 @@ const AudioEngine = (function () {
     }
   }
 
-  return { initCtx, setVolume, getVolume, stopAll, playChime, playSiren };
+  return { initCtx, setVolume, getVolume, stopAll, playChime, playSiren, playAudioFile, triggerActionSound };
 })();
 
 /* ============================================================
@@ -1781,11 +2157,14 @@ const TTSEngine = (function () {
 })();
 
 /* ============================================================
-   3. ĐỒNG HỒ THỜI GIAN THỰC (CHÍNH XÁC THEO DATE, KHÔNG DÙNG COUNTER)
+   3. ĐỒNG HỒ THỜI GIAN THỰC & BỘ MÁY PHÁT LỊCH (CHECK SCHEDULE)
    ============================================================ */
 const DAYS_VI = ['Chủ nhật', 'Thứ hai', 'Thứ ba', 'Thứ tư', 'Thứ năm', 'Thứ sáu', 'Thứ bảy'];
 
 function pad2(n) { return String(n).padStart(2, '0'); }
+
+let lastTriggeredMinute = '';
+let isExecutingSchedule = false;
 
 function updateClock() {
   const now = new Date();
@@ -1813,13 +2192,74 @@ function updateClock() {
 
   // Countdown đến lịch phát tiếp theo
   updateAlarmCountdown(now);
+
+  // Kiểm tra và phát lịch tự động nếu đến giờ
+  checkSchedule(now);
+}
+
+/**
+ * Bộ máy phát lịch tự động (Port từ Desktop sang Mobile):
+ * Tick mỗi giây, khử trùng lặp theo phút, kiểm tra ngày trong tuần,
+ * khóa phát chồng và xử lý tuần tự nhiều lịch cùng phút.
+ */
+async function checkSchedule(now) {
+  const h = now.getHours(), m = now.getMinutes();
+  const timeStr = `${pad2(h)}:${pad2(m)}`;
+  const dayOfWeek = now.getDay();
+
+  // Chỉ kích hoạt một lần mỗi phút
+  if (timeStr === lastTriggeredMinute) return;
+
+  // Kiểm tra cấu hình Tự động phát lịch
+  const cfgAuto = document.getElementById('cfg-auto-play');
+  if (cfgAuto && !cfgAuto.checked) return;
+
+  // Lọc các lịch đang bật và áp dụng cho ngày hôm nay
+  const activeSchedules = userSchedules.filter(s => {
+    if (s.on === false || s.enabled === false) return false;
+    if (s.time !== timeStr) return false;
+    if (Array.isArray(s.days) && s.days.length > 0) {
+      return s.days.includes(dayOfWeek);
+    }
+    return true;
+  });
+
+  if (!activeSchedules.length) return;
+
+  lastTriggeredMinute = timeStr;
+
+  if (isExecutingSchedule) {
+    console.warn('[Lịch tự động] Đang phát lịch trước, chờ phát tiếp...');
+    return;
+  }
+
+  isExecutingSchedule = true;
+
+  for (const s of activeSchedules) {
+    try {
+      console.log(`[Lịch tự động] Kích hoạt: ${s.action} lúc ${s.time}`);
+      addLogItem(`Lịch tự động: ${s.action}`, '🔔', 'ok', `Đúng giờ ${s.time}`);
+      showToast(`🔔 [Lịch phát] ${s.action}`);
+
+      await new Promise(resolve => {
+        AudioEngine.triggerActionSound(s.action, () => {
+          resolve();
+        });
+      });
+    } catch (err) {
+      console.error('[Lịch tự động] Lỗi phát lịch:', err);
+    }
+  }
+
+  isExecutingSchedule = false;
+  renderTimeline();
 }
 
 /* ============================================================
    4. TÍNH TOÁN LỊCH PHÁT TIẾP THEO (TÍNH ĐÚNG BƯỚC QUA NỬA ĐÊM)
    ============================================================ */
 function updateAlarmCountdown(now) {
-  const activeSchedules = userSchedules.filter(s => s.enabled !== false);
+  const activeSchedules = userSchedules.filter(s => (s.on !== false && s.enabled !== false));
   const nextTimeEl = document.getElementById('next-alarm-time');
   const nextNameEl = document.getElementById('next-alarm-name');
   const countdownEl= document.getElementById('alarm-countdown');
@@ -1834,7 +2274,6 @@ function updateAlarmCountdown(now) {
   const currentMinutes = now.getHours() * 60 + now.getMinutes();
   const currentSeconds = now.getSeconds();
 
-  // Chuyển sang dạng { minutes, schedule }
   const parsed = activeSchedules.map(s => {
     const [hh, mm] = s.time.split(':').map(Number);
     return { total: hh * 60 + mm, schedule: s };
@@ -1842,12 +2281,10 @@ function updateAlarmCountdown(now) {
 
   parsed.sort((a, b) => a.total - b.total);
 
-  // Tìm lịch hôm nay sau giờ hiện tại
   let target = parsed.find(item => item.total > currentMinutes);
   let isTomorrow = false;
 
   if (!target) {
-    // Nếu hết giờ hôm nay, lấy lịch đầu tiên của ngày mai (vượt qua nửa đêm)
     target = parsed[0];
     isTomorrow = true;
   }
@@ -1857,7 +2294,6 @@ function updateAlarmCountdown(now) {
       ? (target.total + 24 * 60) - currentMinutes
       : target.total - currentMinutes;
 
-    // Trừ 1 phút nếu có số giây đang trôi
     let diffSec = 60 - currentSeconds;
     if (diffSec === 60) {
       diffSec = 0;
@@ -1929,16 +2365,13 @@ function switchTab(tabId) {
   const target = document.getElementById('tab-' + tabId);
   if (target) {
     target.classList.add('active');
-    // Scroll về đầu tab khi chuyển mà không giật
     target.scrollTop = 0;
   }
 
-  // Cập nhật Bottom nav
   document.querySelectorAll('#bottom-nav .nav-tab').forEach(el => {
     el.classList.toggle('active', el.dataset.tab === tabId);
   });
 
-  // Cập nhật iPad Sidebar
   document.querySelectorAll('#sidebar-nav .sidebar-nav-item').forEach(el => {
     el.classList.toggle('active', el.dataset.tab === tabId);
   });
@@ -1946,35 +2379,62 @@ function switchTab(tabId) {
   currentTab = tabId;
 }
 
-// Bắt sự kiện click cho iPad sidebar
 document.querySelectorAll('#sidebar-nav .sidebar-nav-item').forEach(el => {
   el.addEventListener('click', () => switchTab(el.dataset.tab));
 });
 
 /* ============================================================
-   7. TIMELINE LỊCH HÔM NAY (ĐỒNG BỘ ĐẦU PHÚT & PHỤC HỒI NỀN)
+   7. TIMELINE LỊCH HÔM NAY (ĐỘNG TỪ USERSCHEDULES CỦA HÔM NAY)
    ============================================================ */
-const timelineData = [
-  { time: '05:30', name: 'Báo thức',          icon: '⏰' },
-  { time: '07:00', name: 'Chuẩn bị làm việc', icon: '🧹' },
-  { time: '07:15', name: 'Làm việc',          icon: '💼' },
-  { time: '09:00', name: 'Nghỉ giải lao',      icon: '☕' },
-  { time: '11:15', name: 'Hết giờ làm việc',  icon: '🏁' },
-];
+function getActionIcon(action) {
+  if (!action) return '📢';
+  if (action.includes('Báo thức')) return '⏰';
+  if (action.includes('Thể dục')) return '🏃';
+  if (action.includes('Chuẩn bị')) return '🧹';
+  if (action.includes('Làm việc')) return '💼';
+  if (action.includes('giải lao') || action.includes('Giải lao')) return '☕';
+  if (action.includes('Hết giờ')) return '🏁';
+  if (action.includes('Ăn') || action.includes('cơm')) return '🍽';
+  if (action.includes('Điểm danh')) return '📋';
+  if (action.includes('Ngủ')) return '🌙';
+  if (action.includes('Chào cờ') || action.includes('Quốc ca')) return '🚩';
+  if (action.includes('Báo động') || action.includes('khẩn')) return '🚨';
+  if (action.includes('Tập hợp')) return '👥';
+  return '📢';
+}
 
 function renderTimeline() {
   const now = new Date();
   const nowTotal = now.getHours() * 60 + now.getMinutes();
+  const dayOfWeek = now.getDay();
   const container = document.getElementById('timeline-today');
   if (!container) return;
   container.innerHTML = '';
 
-  let nextIdx = timelineData.findIndex(item => {
+  const activeToday = userSchedules
+    .filter(s => (s.on !== false && s.enabled !== false) && (!s.days || s.days.includes(dayOfWeek)))
+    .map(s => ({
+      time: s.time,
+      name: s.action,
+      icon: getActionIcon(s.action)
+    }))
+    .sort((a, b) => a.time.localeCompare(b.time));
+
+  if (!activeToday.length) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:24px 16px;color:var(--text-muted);font-size:12px;">
+        <span style="font-size:24px;display:block;margin-bottom:6px;">📅</span>
+        Hôm nay không có lịch phát nào được kích hoạt.
+      </div>`;
+    return;
+  }
+
+  let nextIdx = activeToday.findIndex(item => {
     const [h, m] = item.time.split(':').map(Number);
     return (h * 60 + m) > nowTotal;
   });
 
-  timelineData.forEach((item, idx) => {
+  activeToday.forEach((item, idx) => {
     const [h, m] = item.time.split(':').map(Number);
     const itemTotal = h * 60 + m;
     const isDone = itemTotal <= nowTotal;
@@ -2002,7 +2462,6 @@ function renderTimeline() {
   });
 }
 
-// Đồng bộ cập nhật timeline ngay tại giây :00 của mỗi phút
 function scheduleTimelineSync() {
   const now = new Date();
   const msToNextMin = (60 - now.getSeconds()) * 1000 - now.getMilliseconds();
@@ -2180,6 +2639,7 @@ function renderScheduleList() {
     const item = document.createElement('div');
     item.className = 'schedule-item';
     item.id = 'sch-' + sch.id;
+    const isChecked = (sch.on !== false && sch.enabled !== false);
     item.innerHTML = `
       <span class="si-icon">🕒</span>
       <div class="si-body">
@@ -2187,7 +2647,7 @@ function renderScheduleList() {
         <div class="si-name">${sch.action}</div>
       </div>
       <label class="toggle" aria-label="Bật tắt lịch ${sch.time}">
-        <input type="checkbox" ${sch.enabled !== false ? 'checked' : ''} data-id="${sch.id}" class="sch-toggle-input" />
+        <input type="checkbox" ${isChecked ? 'checked' : ''} data-id="${sch.id}" class="sch-toggle-input" />
         <span class="toggle-slider"></span>
       </label>
       <button type="button" class="btn-delete" data-id="${sch.id}" aria-label="Xóa lịch ${sch.time}">🗑</button>
@@ -2233,12 +2693,15 @@ function addSchedule() {
     id: Date.now(),
     time: timeStr,
     action: action,
-    enabled: true
+    on: true,
+    enabled: true,
+    days: [1,2,3,4,5,6,0]
   };
 
   userSchedules.push(newSch);
   Store.set(Store.KEYS.SCHEDULES, userSchedules);
   renderScheduleList();
+  renderTimeline();
   updateAlarmCountdown(new Date());
   if (typeof NativeBridge !== 'undefined') NativeBridge.syncNativeAlarms();
 
@@ -2249,8 +2712,11 @@ function addSchedule() {
 function toggleSchedule(id, isEnabled) {
   const target = userSchedules.find(x => x.id === id);
   if (target) {
+    target.on = isEnabled;
     target.enabled = isEnabled;
     Store.set(Store.KEYS.SCHEDULES, userSchedules);
+    renderScheduleList();
+    renderTimeline();
     updateAlarmCountdown(new Date());
     if (typeof NativeBridge !== 'undefined') NativeBridge.syncNativeAlarms();
     showToast(isEnabled ? '✓ Đã kích hoạt lịch' : '✗ Đã tạm tắt lịch');
@@ -2258,6 +2724,10 @@ function toggleSchedule(id, isEnabled) {
 }
 
 function deleteSchedule(id) {
+  const target = userSchedules.find(x => x.id === id);
+  const label = target ? `${target.time} – ${target.action}` : 'lịch này';
+  if (!confirm(`Bạn có chắc chắn muốn xóa lịch phát: ${label}?`)) return;
+
   const el = document.getElementById('sch-' + id);
   if (el) {
     el.style.transition = 'opacity 0.2s, transform 0.2s';
@@ -2268,10 +2738,93 @@ function deleteSchedule(id) {
     userSchedules = userSchedules.filter(x => x.id !== id);
     Store.set(Store.KEYS.SCHEDULES, userSchedules);
     renderScheduleList();
+    renderTimeline();
     updateAlarmCountdown(new Date());
     if (typeof NativeBridge !== 'undefined') NativeBridge.syncNativeAlarms();
     showToast('🗑 Đã xóa lịch phát');
   }, 200);
+}
+
+/* ============================================================
+   10.1. XUẤT VÀ NHẬP DỮ LIỆU LỊCH PHÁT (JSON COMPATIBLE VỚI DESKTOP)
+   ============================================================ */
+function exportSchedulesJSON() {
+  try {
+    const exportData = {
+      app: 'GDQPAN',
+      version: '3.0',
+      exportedAt: new Date().toISOString(),
+      schedules: userSchedules
+    };
+    const jsonStr = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `lich_phat_gdqpan_${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('📥 Đã xuất file lịch phát JSON');
+    addLogItem('Xuất lịch phát', '📥', 'ok', `Đã xuất ${userSchedules.length} lịch sang file JSON`);
+  } catch (err) {
+    console.error('[Export] Lỗi xuất JSON:', err);
+    showToast('✗ Không thể xuất file lịch phát');
+  }
+}
+
+function importSchedulesJSON(input) {
+  if (!input || !input.files || !input.files.length) return;
+  const file = input.files[0];
+  const reader = new FileReader();
+
+  reader.onload = function (e) {
+    try {
+      const parsed = JSON.parse(e.target.result);
+      let importedList = [];
+      if (Array.isArray(parsed)) {
+        importedList = parsed;
+      } else if (parsed && Array.isArray(parsed.schedules)) {
+        importedList = parsed.schedules;
+      } else {
+        throw new Error('Định dạng file không tương thích');
+      }
+
+      const validated = importedList
+        .filter(item => item && typeof item.time === 'string' && typeof item.action === 'string')
+        .map((item, idx) => ({
+          id: item.id || (Date.now() + idx),
+          time: item.time,
+          action: item.action,
+          on: (item.on !== undefined ? item.on : (item.enabled !== false)),
+          enabled: (item.on !== undefined ? item.on : (item.enabled !== false)),
+          days: Array.isArray(item.days) ? item.days : [1, 2, 3, 4, 5, 6, 0]
+        }));
+
+      if (!validated.length) {
+        showToast('⚠ File JSON không chứa lịch phát hợp lệ');
+        return;
+      }
+
+      userSchedules = validated;
+      Store.set(Store.KEYS.SCHEDULES, userSchedules);
+      renderScheduleList();
+      renderTimeline();
+      updateAlarmCountdown(new Date());
+      if (typeof NativeBridge !== 'undefined') NativeBridge.syncNativeAlarms();
+
+      showToast(`✓ Đã nhập thành công ${validated.length} lịch phát`);
+      addLogItem('Nhập lịch phát', '📤', 'ok', `Đã đồng bộ ${validated.length} lịch từ file JSON`);
+    } catch (err) {
+      console.error('[Import] Lỗi nhập JSON:', err);
+      showToast('✗ Lỗi đọc file JSON lịch phát');
+    } finally {
+      input.value = '';
+    }
+  };
+
+  reader.readAsText(file);
 }
 
 /* ============================================================
@@ -2394,37 +2947,53 @@ function playNotify() {
 }
 
 /* ============================================================
-   13. CÁC TÁC VỤ NHANH VÀ BÁO ĐỘNG KHẨN CẤP
+   13. CÁC TÁC VỤ NHANH VÀ BÁO ĐỘNG KHẨN CẤP (XÁC NHẬN 2 BƯỚC)
    ============================================================ */
-function handleFuncCard(el, name) {
-  AudioEngine.stopAll();
-  showToast(`▶ Đang phát: ${name}`);
-  try {
-    addLogItem(name, '🔔', 'ok', 'Kích hoạt từ màn hình chính');
-  } catch (e) {
-    console.warn('[Log] Lỗi addLogItem không gây gián đoạn:', e);
-  }
+function focusNotifyInput() {
+  setTimeout(() => {
+    const el = document.getElementById('notify-text');
+    if (el) {
+      el.focus();
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, 150);
+}
 
-  if (name.includes('Chào cờ')) {
-    AudioEngine.playChime(() => {
-      TTSEngine.speak('Nghiêm! Chào cờ! Quốc ca!', { rate: 0.95 });
-    });
-  } else if (name.includes('Báo động')) {
-    AudioEngine.playSiren(6, () => {
-      TTSEngine.speak('Báo động tác chiến toàn đơn vị!', { rate: 1.05 });
-    });
+function openEmergencyConfirm(actionType, title, desc) {
+  pendingEmergencyAction = actionType || 'emergency';
+  const modal = document.getElementById('confirm-emergency-modal');
+  const titleEl = document.getElementById('modal-em-title');
+  const descEl = document.getElementById('modal-em-desc');
+  if (titleEl && title) titleEl.textContent = title;
+  if (descEl && desc) descEl.textContent = desc;
+  if (modal) modal.style.display = 'flex';
+}
+
+function closeEmergencyConfirm() {
+  pendingEmergencyAction = null;
+  const modal = document.getElementById('confirm-emergency-modal');
+  if (modal) modal.style.display = 'none';
+}
+
+function executeConfirmedEmergency() {
+  const action = pendingEmergencyAction;
+  closeEmergencyConfirm();
+
+  if (action === 'alarm_card') {
+    AudioEngine.stopAll();
+    showToast('🚨 ĐÃ KÍCH HOẠT BÁO ĐỘNG TÁC CHIẾN');
+    addLogItem('Báo động tác chiến', '🚨', 'ok', 'Kích hoạt từ thẻ chức năng (Đã xác nhận)');
+    AudioEngine.triggerActionSound('Báo động');
   } else {
-    AudioEngine.playChime(() => {
-      TTSEngine.speak(`Thông báo: ${name}`, { rate: 1.0 });
-    });
+    executeEmergencyNow();
   }
 }
 
-function handleEmergency() {
+function executeEmergencyNow() {
   AudioEngine.stopAll();
   showToast('🚨 PHÁT KHẨN CẤP – ƯU TIÊN CAO NHẤT!');
   try {
-    addLogItem('Báo động khẩn cấp', '🚨', 'ok', 'Hú còi & khẩu lệnh khẩn');
+    addLogItem('Báo động khẩn cấp', '🚨', 'ok', 'Hú còi & khẩu lệnh khẩn (Đã xác nhận)');
   } catch (e) {
     console.warn('[Log] Lỗi addLogItem không gây gián đoạn:', e);
   }
@@ -2438,6 +3007,30 @@ function handleEmergency() {
     });
   } else {
     TTSEngine.speak('Thông báo khẩn cấp! Đề nghị toàn thể đơn vị khẩn trương cơ động thực hiện nhiệm vụ!', { rate: 1.1 });
+  }
+}
+
+function handleEmergency() {
+  openEmergencyConfirm('emergency', 'XÁC NHẬN PHÁT KHẨN CẤP', 'Bạn có chắc chắn muốn kích hoạt còi báo động khẩn cấp và hiệu lệnh ưu tiên cao nhất toàn đơn vị không?');
+}
+
+function handleFuncCard(el, name) {
+  AudioEngine.stopAll();
+  showToast(`▶ Đang phát: ${name}`);
+  try {
+    addLogItem(name, '🔔', 'ok', 'Kích hoạt từ màn hình chính');
+  } catch (e) {
+    console.warn('[Log] Lỗi addLogItem không gây gián đoạn:', e);
+  }
+
+  if (name.includes('Báo động')) {
+    openEmergencyConfirm('alarm_card', 'XÁC NHẬN BÁO ĐỘNG TÁC CHIẾN', 'Bạn có chắc chắn muốn phát còi báo động tác chiến toàn đơn vị không?');
+  } else if (name.includes('Chào cờ')) {
+    AudioEngine.triggerActionSound('Chào cờ');
+  } else if (name.includes('Nhạc') || name.includes('hành khúc')) {
+    AudioEngine.triggerActionSound('Nhạc hành khúc');
+  } else {
+    AudioEngine.triggerActionSound(name);
   }
 }
 
@@ -2483,7 +3076,7 @@ function showToast(msg) {
    15. EVENT DELEGATION: RIPPLE EFFECT & KEYBOARD ACCESSIBILITY
    ============================================================ */
 document.addEventListener('click', function (e) {
-  const target = e.target.closest('.func-card, .sh-btn, .btn-add-schedule, .btn-play-notify, .emergency-banner');
+  const target = e.target.closest('.func-card, .sh-btn, .btn-add-schedule, .btn-play-notify, .emergency-banner, .btn-io');
   if (!target) return;
 
   const rect = target.getBoundingClientRect();
@@ -2527,12 +3120,40 @@ if (notifyTextarea) {
 
 /* ============================================================
    17. PHỤC HỒI ĐỒNG HỒ & TRẠNG THÁI KHI TRỞ LẠI FOREGROUND
-   (visibilitychange, pageshow, focus)
+   (visibilitychange, pageshow, focus) - XỬ LÝ PHÁT BÙ LỊCH LỠ
    ============================================================ */
 function handleAppResume() {
   updateClock();
   renderTimeline();
   if (AudioEngine.initCtx) AudioEngine.initCtx();
+
+  // Kiểm tra lịch phát bị lỡ trong cửa sổ trễ 2 phút vừa qua
+  const cfgAuto = document.getElementById('cfg-auto-play');
+  if (cfgAuto && !cfgAuto.checked) return;
+
+  const now = new Date();
+  const currentTotal = now.getHours() * 60 + now.getMinutes();
+  const dayOfWeek = now.getDay();
+
+  const missed = userSchedules.find(s => {
+    if (s.on === false || s.enabled === false) return false;
+    if (Array.isArray(s.days) && s.days.length > 0 && !s.days.includes(dayOfWeek)) return false;
+    const [sh, sm] = s.time.split(':').map(Number);
+    const sTotal = sh * 60 + sm;
+    const diff = currentTotal - sTotal;
+    return diff >= 0 && diff <= 2 && s.time !== lastTriggeredMinute;
+  });
+
+  if (missed && !isExecutingSchedule) {
+    lastTriggeredMinute = missed.time;
+    console.log(`[Lịch tự động] Phát bù lịch trễ: ${missed.action} (${missed.time})`);
+    addLogItem(`Phát bù: ${missed.action}`, '⏱', 'ok', `Bù lịch lúc ${missed.time}`);
+    showToast(`⏱ [Phát bù lịch] ${missed.action} (${missed.time})`);
+    isExecutingSchedule = true;
+    AudioEngine.triggerActionSound(missed.action, () => {
+      isExecutingSchedule = false;
+    });
+  }
 }
 
 document.addEventListener('visibilitychange', function () {

@@ -70,7 +70,7 @@ jobs:
           name: "GDQPAN Mobile App (Android APK)"
           body: |
             ## 📱 Ứng Dụng GDQPAN Mobile – Hệ Thống Thông Báo Tự Động
-            * **Phiên bản**: 1.0.0 (Capacitor Native)
+            * **Phiên bản**: 1.1.0 (Capacitor Native - Bản sửa toàn diện)
             * **Hệ điều hành**: Android 8.0+
             
             ### 📥 Hướng dẫn cài đặt cho khách hàng:

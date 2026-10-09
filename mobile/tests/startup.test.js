@@ -138,6 +138,45 @@ async function runTest() {
         console.log(`✅ [THÀNH CÔNG] Widget lịch tiếp theo hợp lệ: ${nextTimeText} - ${nextNameText}`);
       }
 
+      // 7. Kiểm tra AudioEngine API (playAudioFile, triggerActionSound, stopAll)
+      const hasAudioEngine = await page.evaluate(() => {
+        return typeof AudioEngine !== 'undefined' &&
+          typeof AudioEngine.triggerActionSound === 'function' &&
+          typeof AudioEngine.playAudioFile === 'function' &&
+          typeof AudioEngine.stopAll === 'function';
+      });
+      if (!hasAudioEngine) {
+        console.error(`❌ [THẤT BẠI] AudioEngine thiếu các phương thức cốt lõi`);
+        totalFailures++;
+      } else {
+        console.log(`✅ [THÀNH CÔNG] AudioEngine đầy đủ triggerActionSound, playAudioFile, stopAll`);
+      }
+
+      // 8. Kiểm tra Hộp thoại xác nhận 2 bước chống chạm nhầm Báo động / Khẩn cấp
+      await page.click('.emergency-banner');
+      await new Promise(r => setTimeout(r, 200));
+      const modalVisible = await page.$eval('#confirm-emergency-modal', el => window.getComputedStyle(el).display !== 'none');
+      if (!modalVisible) {
+        console.error(`❌ [THẤT BẠI] Hộp thoại xác nhận 2 bước không mở khi nhấn Khẩn cấp`);
+        totalFailures++;
+      } else {
+        console.log(`✅ [THÀNH CÔNG] Hộp thoại xác nhận 2 bước đã kích hoạt an toàn`);
+        // Bấm nút HỦY BỎ để đóng modal
+        await page.click('.btn-em-cancel');
+        await new Promise(r => setTimeout(r, 200));
+      }
+
+      // 9. Kiểm tra hỗ trợ Nhập / Xuất lịch JSON
+      const hasJsonIO = await page.evaluate(() => {
+        return typeof exportSchedulesJSON === 'function' && typeof importSchedulesJSON === 'function';
+      });
+      if (!hasJsonIO) {
+        console.error(`❌ [THẤT BẠI] Thiếu hàm exportSchedulesJSON hoặc importSchedulesJSON`);
+        totalFailures++;
+      } else {
+        console.log(`✅ [THÀNH CÔNG] Bộ công cụ Nhập/Xuất lịch JSON sẵn sàng`);
+      }
+
       await page.close();
     }
   } finally {
