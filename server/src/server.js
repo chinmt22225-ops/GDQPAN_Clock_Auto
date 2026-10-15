@@ -39,7 +39,7 @@ export function createApplication(options={}){
   const emailEnabled=options.emailEnabled??(local||!!options.mailer||!!(process.env.SMTP_URL&&process.env.MAIL_FROM));
   const inbox=[],limits=new Map(),adminEmail=(process.env.ADMIN_EMAIL??'chinm.t2.2225@gmail.com').toLowerCase();
   const safeUser=u=>({id:u.id,email:u.email,role:u.role,status:u.status,verified:!!u.verified,expires:u.expires,created:u.created,approval:u.approval,reviewedBy:u.reviewed_by,reviewedAt:u.reviewed_at});
-  function fail(status,message){throw Object.assign(Error(message),{status});}
+  function fail(status,message,code){throw Object.assign(Error(message),{status,code});}
   async function mail(user,kind){
     const token=randomBytes(32).toString('hex'),expires=Date.now()+(kind==='verify'?86400000:900000);
     // Multiple requested links may coexist; consuming one invalidates all links of that kind.
@@ -58,7 +58,12 @@ export function createApplication(options={}){
   }
   async function body(req,max=1024*1024){let size=0,chunks=[];for await(const b of req){size+=b.length;if(size>max)fail(413,'Nội dung quá lớn.');chunks.push(b);}return Buffer.concat(chunks);}
   async function json(req){try{const value=JSON.parse((await body(req)).toString()||'{}');if(!value||typeof value!=='object'||Array.isArray(value))fail(400,'Dữ liệu cần là object JSON.');return value;}catch(e){if(e.status)throw e;fail(400,'Dữ liệu không hợp lệ.');}}
-  function validUser(u){if(!u||u.status!=='active'||!u.verified||(u.expires!==null&&u.expires<=Date.now()))fail(403,'Tài khoản chưa xác minh, bị khóa hoặc hết hạn.');if(u.role!=='admin'&&u.approval!=='approved')fail(403,u.approval==='rejected'?'Yêu cầu đăng ký đã bị admin từ chối.':'Gmail đã xác minh. Tài khoản đang chờ admin duyệt.');}
+  function validUser(u){
+    if(!u||u.status!=='active')fail(403,'Tài khoản đã bị khóa. Vui lòng liên hệ admin.','ACCOUNT_LOCKED');
+    if(u.expires!==null&&u.expires<=Date.now())fail(403,'Tài khoản đã hết hạn. Vui lòng liên hệ admin.','ACCOUNT_EXPIRED');
+    if(!u.verified)fail(403,'Tài khoản chưa xác minh Gmail. Vui lòng kiểm tra email xác minh.','EMAIL_UNVERIFIED');
+    if(u.role!=='admin'&&u.approval!=='approved')fail(403,u.approval==='rejected'?'Yêu cầu đăng ký đã bị admin từ chối.':'Gmail đã xác minh. Tài khoản đang chờ admin duyệt.',u.approval==='rejected'?'APPROVAL_REJECTED':'APPROVAL_PENDING');
+  }
   function auth(req){const token=(req.headers.authorization??'').replace(/^Bearer /,'');const s=one('SELECT * FROM sessions WHERE hash=?',hash(token));if(!s||s.expires<=Date.now())fail(401,'Vui lòng đăng nhập lại.');const u=one('SELECT * FROM users WHERE id=?',s.user_id);validUser(u);run('UPDATE devices SET seen=? WHERE id=?',Date.now(),s.device_id);return {u,s};}
   const admin=a=>{if(a.u.role!=='admin')fail(403,'Chỉ admin được chỉnh dữ liệu hoặc quản trị.');};
   function checkPassword(p){if(typeof p!=='string'||p.length<12||p.length>128)fail(400,'Mật khẩu cần 12–128 ký tự.');}
@@ -199,7 +204,7 @@ export function createApplication(options={}){
       if(method!=='GET')fail(405,'Không hỗ trợ thao tác.');
       const name=route==='/'?'index.html':route.slice(1);if(!['index.html','app.js','style.css'].includes(name))fail(404,'Không tìm thấy trang.');
       res.writeHead(200,{...headers,'Content-Type':name.endsWith('.html')?'text/html; charset=utf-8':name.endsWith('.js')?'text/javascript; charset=utf-8':'text/css; charset=utf-8'});fs.createReadStream(path.join(here,'../public',name)).pipe(res);
-    }catch(e){if(!res.headersSent)reply(e.status??500,{error:e.status?e.message:'Máy chủ chưa xử lý được yêu cầu.'});else res.destroy();}
+    }catch(e){if(!res.headersSent)reply(e.status??500,{error:e.status?e.message:'Máy chủ chưa xử lý được yêu cầu.',...(e.status&&e.code?{code:e.code}:{})});else res.destroy();}
   });
   return {server,db,inbox,local,async createAdmin(email,password){checkPassword(password);const id=randomUUID();run("INSERT INTO users(id,email,password,role,verified,status,expires,created) VALUES(?,?,?,'admin',1,'active',NULL,?)",id,email.toLowerCase(),await passwordHash(password),Date.now());return id;},
     async provisionAdmin(email,password){

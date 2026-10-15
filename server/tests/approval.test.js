@@ -31,3 +31,22 @@ test('migration preserves old non-Gmail accounts and does not approve pending ac
   await fetch(base+'/api/auth/register',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:'gdqpan-qa-reopen@gmail.com',password})});await new Promise(r=>app.server.close(r));app.close();app=createApplication({local:true,data:dir});assert.equal(app.db.prepare('SELECT approval FROM users WHERE email=?').get('gdqpan-qa-reopen@gmail.com').approval,'pending');assert.equal(app.db.prepare('SELECT approval FROM users WHERE id=?').get('legacy').approval,'approved');
 }finally{app?.close();fs.rmSync(dir,{recursive:true,force:true});}});
 test('public demo without email disables registration and recovery honestly, leaving database unchanged',async()=>{const f=await fixture({local:false,publicUrl:'https://demo.example.test',emailEnabled:false});try{const health=await f.call('/health',undefined,undefined,'GET');assert.equal(health.data.emailEnabled,false);for(const route of ['/auth/register','/auth/forgot','/auth/resend']){const result=await f.call(route,{email:'gdqpan-qa-disabled@gmail.com',password});assert.equal(result.status,503);}assert.equal(f.app.db.prepare('SELECT COUNT(*) AS n FROM users').get().n,0);assert.equal(f.app.db.prepare('SELECT COUNT(*) AS n FROM links').get().n,0);}finally{await f.close();}});
+
+test('login distinguishes unverified, locked, expired and pending accounts without issuing sessions',async()=>{
+  const f=await fixture();try{
+    const email='gdqpan-qa-error-codes@gmail.com';
+    await f.call('/auth/register',{email,password});
+    const check=async code=>{const r=await f.call('/auth/login',{email,password});assert.equal(r.status,403);assert.equal(r.data.code,code);assert.equal(f.app.db.prepare('SELECT COUNT(*) AS n FROM sessions').get().n,0);};
+    await check('EMAIL_UNVERIFIED');
+    f.app.db.prepare("UPDATE users SET status='locked' WHERE email=?").run(email);
+    await check('ACCOUNT_LOCKED');
+    f.app.db.prepare("UPDATE users SET status='active',expires=? WHERE email=?").run(Date.now()-1000,email);
+    await check('ACCOUNT_EXPIRED');
+    f.app.db.prepare('UPDATE users SET expires=NULL,verified=1 WHERE email=?').run(email);
+    await check('APPROVAL_PENDING');
+    f.app.db.prepare("UPDATE users SET approval='rejected' WHERE email=?").run(email);
+    await check('APPROVAL_REJECTED');
+    const wrong=await f.call('/auth/login',{email,password:'Wrong-password-1234'});
+    assert.equal(wrong.status,401);assert.equal(wrong.data.code,undefined);
+  }finally{await f.close();}
+});
