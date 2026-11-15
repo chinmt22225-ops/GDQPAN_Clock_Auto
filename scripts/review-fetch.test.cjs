@@ -1,0 +1,6 @@
+const {test}=require('node:test'),assert=require('node:assert/strict'),http=require('node:http'),{fetchPage}=require('../fetch-page.cjs');
+test('stream page fetch follows relative redirects and bounds redirect loops, response size, status and timeout',async()=>{
+  const server=http.createServer((req,res)=>{if(req.url==='/relative'){res.writeHead(302,{Location:'/page'}).end();}else if(req.url==='/loop'){res.writeHead(307,{Location:'/loop'}).end();}else if(req.url==='/large'){res.end('x'.repeat(2048));}else if(req.url==='/missing'){res.writeHead(404).end();}else if(req.url==='/slow'){setTimeout(()=>res.end('late'),250);}else res.end('<video src="https://example.test/live.m3u8">');});
+  await new Promise(r=>server.listen(0,'127.0.0.1',r));const base='http://127.0.0.1:'+server.address().port;
+  try{assert((await fetchPage(base+'/relative')).includes('live.m3u8'));await assert.rejects(fetchPage(base+'/loop',{}, {maxRedirects:2}),/redirect/);await assert.rejects(fetchPage(base+'/large',{}, {maxBytes:1024}),/kích thước/);await assert.rejects(fetchPage(base+'/missing'),/HTTP 404/);await assert.rejects(fetchPage(base+'/slow',{}, {timeout:50}),/timeout/);await assert.rejects(fetchPage('file:///private'),/URL/);}finally{await new Promise(r=>server.close(r));}
+});

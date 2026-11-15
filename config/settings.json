@@ -1,5 +1,61 @@
 {
-  "vtvStreamUrl": "https://vtv.vn/truyen-hinh-truc-tuyen/vtv1.htm",
-  "vtvChannelName": "VTV1 HD - Thời Sự & Tin Tức",
-  "note": "Cấu hình mặc định kênh Thời Sự VTV1. Người dùng có thể dán link YouTube, VTVgo, VTV hoặc link trực tiếp tại nút 'Cài đặt kênh thời sự'."
+  "vtvSchedules": [
+    {
+      "id": "vtv_sch_1",
+      "name": "Thời sự sáng (VTV1)",
+      "startTime": "06:00",
+      "endTime": "06:30",
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        0
+      ],
+      "channelPreset": "vtv1",
+      "enabled": true,
+      "lastTriggeredSlot": "",
+      "manuallyStoppedSlot": ""
+    },
+    {
+      "id": "vtv_sch_2",
+      "name": "Thời sự trưa (VTV1)",
+      "startTime": "11:30",
+      "endTime": "12:00",
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        0
+      ],
+      "channelPreset": "vtv1",
+      "enabled": false,
+      "lastTriggeredSlot": "",
+      "manuallyStoppedSlot": ""
+    },
+    {
+      "id": "vtv_sch_3",
+      "name": "Thời sự chiều (QPVN)",
+      "startTime": "18:00",
+      "endTime": "18:30",
+      "days": [
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        0
+      ],
+      "channelPreset": "qpvn",
+      "enabled": false,
+      "lastTriggeredSlot": "",
+      "manuallyStoppedSlot": ""
+    }
+  ]
 }

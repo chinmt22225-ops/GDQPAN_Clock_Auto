@@ -1,0 +1,26 @@
+#account-overlay{display:none;position:fixed;inset:0;background:#edf3ee;z-index:100000;overflow:auto;padding:20px 12px;color:#173d2c;font:16px system-ui}#account-overlay.visible{display:flex;align-items:flex-start;justify-content:center}#account-overlay>div{background:#fff;border-radius:14px;padding:20px;max-width:500px;width:100%;margin:24px auto}#account-overlay label{display:block;margin:12px 0}#account-overlay input{width:100%;padding:12px;border:1px solid #9ab2a3;border-radius:8px;font:inherit;box-sizing:border-box}#account-overlay button{background:#075c3b;color:#fff;margin:4px}#account-status{white-space:pre-wrap}.account-reader [onclick*="handleAdd"],.account-reader [onclick*="deleteSchedule"],.account-reader [onclick*="toggleSchedule"],.account-reader [onclick*="handleCreate"],.account-reader [onclick*="handleImport"],.account-reader [onclick*="handleAssign"],.account-reader [onclick*="handleQuickAssign"],.account-reader [onclick*="handleRecord"],.account-reader [onclick*="handleDelete"],.account-reader [data-tab="record"],.account-reader [data-tab="merge"]{display:none!important}#account-admin-actions[hidden]{display:none!important}
+.account-reader [onclick*="handleToggleRecord"],.account-reader [onclick*="handleSaveText"],.account-reader [onclick*="handleClearText"],.account-reader [onclick*="VtvScheduleModal"],.account-reader [onclick*="deleteVtvSchedule"],.account-reader [onclick*="toggleVtvSchedule"]{display:none!important}
+
+#account-parking[hidden],#account-bar[hidden]{display:none!important}
+#account-bar{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;padding:16px;margin-bottom:16px;background:#f1f6f3;border:1px solid #c9dbd1;border-radius:12px;color:#173d2c;font:14px system-ui;box-sizing:border-box}
+#account-settings-title,#account-identity,#account-settings-status,#account-notices,#account-admin-actions{grid-column:1/-1;min-width:0;overflow-wrap:anywhere}
+#account-settings-title{font-size:16px;margin:0}#account-identity{font-weight:600}#account-bar button{min-height:48px;border:1px solid #a4bfb0;border-radius:8px;padding:10px 14px;font:inherit;font-weight:600;background:#fff;color:#174b35;cursor:pointer;white-space:normal}#account-bar button:focus-visible{outline:3px solid #287b55;outline-offset:2px}#account-publish{background:#175c40!important;color:#fff!important}#account-admin-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}#account-bar p{white-space:pre-wrap;margin:0;font-size:13px}#account-bar p:empty{display:none}@media(max-width:480px){#account-bar,#account-admin-actions{grid-template-columns:1fr}}
+
+/* Account forms only; application layout and banner remain unchanged. */
+#account-overlay,#account-overlay *{box-sizing:border-box}
+#account-overlay{padding: max(16px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(16px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));overscroll-behavior:contain}
+#account-overlay>div{margin:auto;max-width:460px;min-width:0;box-shadow:0 8px 32px #173d2c18}
+#account-overlay h2{font-size:26px;line-height:1.3;margin:0 0 20px;color:#173d2c}
+#account-overlay [hidden]{display:none!important}
+#account-overlay input{min-height:48px;scroll-margin:20px}
+#account-overlay button{font:inherit;min-height:48px;border-radius:8px;border:0;padding:12px 14px;cursor:pointer;max-width:100%;white-space:normal;margin:4px 0}
+#account-overlay .account-primary{display:block;width:100%;font-weight:700;margin-top:20px}
+#account-overlay .account-link{display:block;background:transparent;color:#075c3b;text-align:center;width:100%;font-size:14px;text-decoration:underline;text-underline-offset:3px}
+#account-overlay button:disabled{opacity:.6;cursor:wait}
+#account-overlay :focus-visible{outline:3px solid #287b55;outline-offset:2px}
+#account-status{line-height:1.55;overflow-wrap:anywhere}#account-status:empty{display:none}
+#account-password-note,#account-registration-info{font-size:13px;line-height:1.6;color:#52665b;margin:12px 0 0}
+#account-waiting{line-height:1.8}
+@media(max-height:540px){#account-overlay>div{margin:0 auto}}
+
+#account-background-label,#account-background-note{grid-column:1/-1}#account-background-label{display:flex;align-items:center;gap:10px;min-height:48px;font-weight:600}#account-background{width:22px;height:22px;accent-color:#075c3b}

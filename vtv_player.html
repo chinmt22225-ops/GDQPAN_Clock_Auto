@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>GDQPAN - Cửa Sổ Truyền Hình Thời Sự VTV</title>
+  <meta name="author" content="Trung tâm Giáo dục Quốc phòng và An ninh - ĐHQG-HCM">
   <link rel="icon" type="image/png" href="assets/icon.png">
   <script src="assets/hls.min.js"></script>
   <style>
@@ -223,6 +224,9 @@
       <div class="badge-dot"></div>
       <span id="player-badge-text">TRỰC TIẾP</span>
     </div>
+    <div style="font-size:11px;color:#cbd5e1;background:rgba(0,0,0,0.65);padding:3px 8px;border-radius:20px;border:1px solid rgba(255,255,255,0.2);display:flex;align-items:center;gap:4px;">
+      <span>🇻🇳</span> GDQPAN • ĐHQG-HCM
+    </div>
   </div>
 
   <!-- NGUỒN PHÁT 1: HLS / MP4 NATIVE -->
@@ -237,7 +241,7 @@
 
   <!-- NGUỒN PHÁT 3: WEB PLAYER TRỰC TIẾP (CHO VTVGO / TRANG WEB BẤT KỲ) -->
   <div id="web-wrap">
-    <webview id="vtv-webview" allowpopups></webview>
+    <webview id="vtv-webview"></webview>
   </div>
 
   <!-- LOADING STATE -->
@@ -590,9 +594,9 @@
   };
 
   // --- LẮNG NGHE LỆNH TỪ ELECTRON IPC ---
-  if (typeof window !== 'undefined' && window.require) {
+  if (typeof window !== 'undefined' && window.ipcRenderer) {
     try {
-      const { ipcRenderer } = window.require('electron');
+      const ipcRenderer = window.ipcRenderer;
       if (ipcRenderer) {
         ipcRenderer.on('load-vtv-stream', (event, url) => {
           if (url) playAnyStream(url);
@@ -623,6 +627,8 @@
 
   // Lắng nghe postMessage nếu mở qua window.open
   window.addEventListener('message', (event) => {
+    if(event.source!==window.opener)return;
+    if(event.origin!==location.origin)return;
     if (event.data && event.data.action === 'load-vtv-stream' && event.data.url) {
       playAnyStream(event.data.url);
     } else if (event.data && event.data.action === 'pause') {

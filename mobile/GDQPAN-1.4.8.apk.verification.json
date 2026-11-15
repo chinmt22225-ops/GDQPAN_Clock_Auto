@@ -1,0 +1,19 @@
+{
+  "file": "GDQPAN-1.4.8.apk",
+  "bytes": 860993837,
+  "sha256": "f2e0aaf4b42cd7641609b1ad3a4b6f476a8a9691fa74cb5e762bb68e52a56406",
+  "package": "vn.gdqpan.app.mobile",
+  "version": "1.4.8",
+  "versionCode": 15,
+  "minSdk": 24,
+  "targetSdk": 36,
+  "signatures": {
+    "v1": true,
+    "v2": true
+  },
+  "v1VerificationApi": 23,
+  "certificateSha256": "48c5c7c1c34172778c0026293f99c181897269ced8cb469b5d53817cfe442452",
+  "referenceCertificateSha256": "48c5c7c1c34172778c0026293f99c181897269ced8cb469b5d53817cfe442452",
+  "zipAligned": true,
+  "checkedAt": "2026-10-20T14:36:07.902Z"
+}

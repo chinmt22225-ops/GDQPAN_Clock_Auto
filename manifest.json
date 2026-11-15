@@ -1,6 +1,7 @@
 {
   "name": "Hệ Thống Thông Báo Tự Động - GDQPAN ĐHQG-HCM",
   "short_name": "GDQPAN Thông Báo",
+  "author": "Trung Tâm Giáo Dục Quốc Phòng và An Ninh — ĐHQG-HCM",
   "description": "Hệ thống phát thanh, báo động và quản lý lịch thông báo tự động GDQPAN ĐHQG-HCM",
   "start_url": "./HE_THONG_THONG_BAO_TU_DONG_DESKTOP.html",
   "scope": "./",

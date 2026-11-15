@@ -1,0 +1,10 @@
+const fs = require('fs');
+const content = fs.readFileSync('mobile/www/index.html', 'utf8');
+console.log('Android www/index.html checks:');
+console.log('  XSS fix (AN TOAN):', content.includes('AN TO\u00c0N') ? 'OK' : 'MISSING');
+console.log('  persist param:', content.includes('persist = true') ? 'OK' : 'MISSING');
+console.log('  !persist guard:', content.includes('!persist') ? 'OK' : 'MISSING');
+console.log('  initVol false:', content.includes('initVol, false') ? 'OK' : 'MISSING');
+console.log('  isTrusted:', content.includes('e.isTrusted') ? 'OK' : 'MISSING');
+console.log('  version 1.4.2:', content.includes("version:'1.4.2'") ? 'OK' : 'MISSING');
+console.log('  window.require remaining:', (content.match(/window\.require/g)||[]).length);

@@ -1,6 +1,30 @@
 # 📱 GDQPAN MOBILE APP (CAPACITOR NATIVE)
 **Hệ thống Thông báo Tự động – Trung tâm Giáo dục Quốc phòng và An ninh (ĐHQG-HCM)**
 
+## Cập nhật Android 1.4.12 — 23/10/2026
+
+Khi mở hộp hẹn giờ của bài mới, sau 5 giây không thao tác sẽ tự phát toàn bài. Chạm/focus/nhập vào bất kỳ ô giờ, phút hoặc giây sẽ hủy bộ đếm cho đến khi đóng hộp; rời ô nhập không kích hoạt lại bộ đếm. Nút Phát toàn bài vẫn phát ngay, nút Xác nhận hẹn giờ giữ chức năng phát có giới hạn thời gian. Đếm thời gian hẹn giờ bắt đầu khi âm thanh thực sự phát, sau bước kiểm tra tài khoản và dừng bài cũ.
+
+APK bàn giao ở `../version_Android_Windows/21102026_Android/GDQPAN-1.4.12.apk`, versionCode 19, cùng chứng thư với 1.4.11. Kiểm thử mới: `npm run test:music-timer`; kiểm thử emulator: `node tests/android-music-timer.test.cjs` (chỉ GDQPAN_QA). Bằng chứng: `../qa/music-timer-20261023/`.
+
+## Kiểm tra và xuất APK từ bản 1.4.8
+
+Chạy `npm run test:apk` để kiểm tra việc phát hiện tệp tải thiếu, sai dung lượng và sai SHA-256.
+Build hiện tại tại Windows: `./build-android.ps1 -Channel official -VersionCode 19 -ReferenceApk ../version_Android_Windows/21102026_Android/GDQPAN-1.4.11.apk`.
+Thêm `-Offline` khi dùng bộ công cụ/dependencies đã có sẵn và không cần truy cập mạng. Kiểm tra thanh điều khiển và danh sách nhạc bằng `npm run test:player`.
+Tham số `ReferenceApk` được tính tương đối với thư mục `mobile/`; dùng APK đã bàn giao để đối chiếu chứng thư ký khi nâng cấp.
+
+Script chỉ xuất APK sau khi kiểm tra cấu trúc ZIP, chữ ký v1/v2, chứng thư ký tham chiếu, application ID,
+phiên bản, minSdk/targetSdk và zipalign. Đi kèm APK có `.sha256` và `.verification.json` ghi số byte chính xác.
+Chữ ký v1 được kiểm tra riêng bằng chế độ API 23 của apksigner; ứng dụng vẫn yêu cầu API 24 (Android 7.0) trở lên.
+
+Kiểm tra tệp sau khi chép/tải, không cần Android SDK:
+`./check-apk-download.ps1 -ApkPath ./GDQPAN-1.4.8.apk -ManifestPath ./GDQPAN-1.4.8.apk.verification.json`.
+Nếu kiểm tra tệp chép ngược từ điện thoại, trỏ `ApkPath` tới tệp đó và giữ `ManifestPath` tới báo cáo phát hành gốc.
+Lỗi “phân tích cú pháp gói” cần kiểm tra tệp đầy đủ trước; tên file đúng chưa chứng minh nội dung đúng.
+Trên Redmi, cấp quyền “Cài đặt ứng dụng không rõ nguồn gốc” cho ứng dụng mở APK theo
+[hướng dẫn Xiaomi](https://www.mi.com/global/support/faq/details/KA-06974/).
+
 ---
 
 ## 📌 Tổng quan dự án

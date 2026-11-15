@@ -1,5 +1,5 @@
 {
-	"appId": "vn.gdqpan.app",
+	"appId": "vn.gdqpan.app.mobile",
 	"appName": "GDQPAN",
 	"webDir": "www",
 	"bundledWebRuntime": false,
@@ -7,6 +7,9 @@
 		"androidScheme": "https"
 	},
 	"plugins": {
+		"SystemBars": {
+			"style": "DARK"
+		},
 		"LocalNotifications": {
 			"smallIcon": "ic_stat_icon_config_sample",
 			"iconColor": "#07362b",

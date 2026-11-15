@@ -1,0 +1,6 @@
+{
+  "deduplicate": true,
+  "skipInvalid": true,
+  "uploads": "studio-only",
+  "customLinks": "play-only"
+}

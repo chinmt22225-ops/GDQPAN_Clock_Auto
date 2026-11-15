@@ -501,6 +501,42 @@ def create_user_guide():
     for sb_pre, sb_txt in sub_btns:
         add_styled_paragraph(doc, sb_txt, bold_prefix="  - " + sb_pre, space_after=3)
 
+    # 4b. Chế độ Ghép Âm thanh nền trong lúc Nói & Thu âm chuyên nghiệp
+    add_styled_heading2(doc, "4b. Chế độ Ghép Âm thanh nền trong lúc Nói & Thu âm Chuyên nghiệp (3 Tab)")
+    add_styled_paragraph(doc, "Hệ thống hỗ trợ công nghệ trộn âm số (Digital Audio Mixing) chuyên nghiệp cho cả 3 chế độ: Đọc văn bản AI, Tự thu âm qua Micro và Ghép chuỗi âm thanh phát thanh. Cán bộ có thể vừa nói/đọc vừa có nhạc nền truyền thống du dương phía dưới, tạo nên các bản tin phát thanh sinh động, trang nghiêm như đài phát thanh chuyên nghiệp.", bold_prefix="• Mục đích: ")
+
+    add_styled_paragraph(doc, "Tại khung 'THÔNG BÁO KHÁC & PHÒNG THU', cán bộ có thể chuyển đổi linh hoạt giữa 3 tab nghiệp vụ:", bold_prefix="• Cấu trúc 3 Tab nghiệp vụ: ")
+    tabs_desc = [
+        ("Tab 1 - Đọc văn bản (AI TTS): ", "Gõ nội dung thông báo, tích chọn 'Ghép âm thanh nền khi đọc' để giọng AI đọc hòa quyện cùng nhạc nền."),
+        ("Tab 2 - Tự thu âm (Voice Recorder): ", "Cán bộ tự cầm micro nói/thu âm, hệ thống vừa phát nhạc nền ra loa/tai nghe vừa trộn trực tiếp vào bản thu số WAV chất lượng cao."),
+        ("Tab 3 - Ghép chuỗi âm thanh (Audio Merger): ", "Ghép nối liên hoàn: [Nhạc hiệu / Hồi chuông] + [Các bản thu / tệp audio] + [Nhạc nền phủ toàn bộ] và xuất ra tệp WAV hoàn chỉnh.")
+    ]
+    for t_pre, t_txt in tabs_desc:
+        add_styled_paragraph(doc, t_txt, bold_prefix="  - " + t_pre, space_after=3)
+
+    add_callout(doc, "HỆ THỐNG ĐIỀU CHỈNH 2 THANH ÂM LƯỢNG ĐỘC LẬP & TỰ ĐỘNG GHI NHỚ:",
+        "Mỗi chế độ đều được trang bị 2 thanh trượt âm lượng riêng biệt:\n"
+        "• Thanh 1 (Giọng đọc / Độ nhạy Mic / Nội dung chính): Thang đo 0% - 100%, mặc định 100% để tiếng nói luôn to, rõ ràng, dõng dạc.\n"
+        "• Thanh 2 (Âm thanh nền / Nhạc nền): Thang đo 0% - 100%, mặc định 25% vừa phải làm nền du dương, không lấn át tiếng người nói.\n"
+        "• Kéo chỉnh linh hoạt theo thời gian thực: Khi đang phát thử hoặc đang thu âm, cán bộ có thể kéo thanh trượt để chỉnh âm lượng to nhỏ ngay lập tức.\n"
+        "• Tự động ghi nhớ: Mọi mức âm lượng cán bộ chọn sẽ được lưu vĩnh viễn vào hệ thống, lần sau mở máy lên không cần chỉnh lại.",
+        box_type="tip")
+
+    add_callout(doc, "HỖ TRỢ 3 NGUỒN ÂM THANH NỀN & BẢO VỆ KHI MẤT MẠNG INTERNET:",
+        "Cán bộ có thể chọn âm thanh nền từ 3 nguồn linh hoạt:\n"
+        "1. Thư viện Sound/: Nhạc truyền thống Trung tâm, Quốc ca không lời, nhạc báo thức, điểm danh...\n"
+        "2. Tệp từ máy tính: Tải lên các tệp .mp3, .wav, .m4a bài hát tùy ý trên máy tính của đơn vị.\n"
+        "3. Đường link trực tuyến: Dán link bài hát YouTube, podcast hoặc link MP3 trên mạng Internet.\n\n"
+        "⚠️ CƠ CHẾ BẢO VỆ TỰ ĐỘNG KHI MẤT KẾT NỐI MẠNG (OFFLINE):\n"
+        "Nếu đang dùng nguồn link trực tuyến mà máy tính bị mất mạng Internet, hệ thống sẽ tự động ngắt kết nối an toàn và hiển thị bảng thông báo màu vàng cảnh báo. Cán bộ chỉ cần bấm nút [Tải tệp từ máy] hoặc [Dùng nhạc Sound/] để tiếp tục phát thanh mà không gặp bất kỳ lỗi nào.",
+        box_type="warning")
+
+    add_callout(doc, "CÔNG NGHỆ KHỬ VANG TỰ ĐỘNG & KHUYẾN NGHỊ KHI THU ÂM (TAB 2):",
+        "• Khử vang & Lọc ồn tự động (Auto Echo Cancellation): Hệ thống tự động triệt tiêu tiếng vọng và tạp âm môi trường khi cán bộ bật micro thu âm.\n"
+        "• Khuyên dùng tai nghe (Headphone): Để đạt chất lượng bản thu phát thanh phòng thu đạt chuẩn cao nhất, cán bộ nên cắm tai nghe khi thu âm có nhạc nền để micro không thu lại tiếng nhạc dội từ loa ngoài vi tính.\n"
+        "• Lưu ý khi gán vào Lịch phát tự động: Nếu cán bộ dùng giọng đọc trình duyệt (Web Speech API / Offline) và bật nhạc nền, hệ thống sẽ đưa ra cảnh báo hướng dẫn chuyển sang Giọng đọc Online AI (FPT.AI / Kokoro) để đảm bảo tệp âm thanh có thể tự động phát đúng giờ hẹn.",
+        box_type="info")
+
     # 5. Lập lịch phát tự động
     add_styled_heading2(doc, "5. Nhóm Lập lịch Phát tự động (Hẹn giờ điểm chuông tự động)")
     add_styled_paragraph(doc, "Tính năng 'Cài đặt một lần - Hệ thống tự chạy quanh năm suốt tháng'. Cán bộ cài đặt sẵn thời gian biểu trong tuần, cứ đến đúng giờ là hệ thống tự động phát chuông hoặc đọc thông báo mà không cần ai phải canh chừng bấm nút.", bold_prefix="• Mục đích: ")
@@ -539,6 +575,34 @@ def create_user_guide():
         "• BƯỚC 3: Chọn thể loại và bấm nút [Lưu bài hát].\n"
         "   ➔ Bài hát sẽ được lưu vĩnh viễn trong hệ thống, lần sau mở máy lên bài hát vẫn còn nguyên đó, không bao giờ bị mất!",
         box_type="step")
+
+    # 6b. Chế độ Thông tin thời sự VTV & Hẹn giờ tự tắt, Lịch phát tự động
+    add_styled_heading2(doc, "6b. Chế độ Tiếp sóng Thông tin Thời sự VTV (Có Hẹn giờ tự tắt & Lịch phát tự động)")
+    add_styled_paragraph(doc, "Phục vụ tiếp sóng bản tin Thời sự buổi sáng, Thời sự trưa, Thời sự truyền hình Quốc phòng (QPVN) tiếp thêm thông tin thời sự chính trị, an ninh quốc phòng cho cán bộ, giảng viên và sinh viên tại Trung tâm.", bold_prefix="• Mục đích: ")
+    add_styled_paragraph(doc, "Tại panel PHÁT NHẠC, cán bộ bấm vào tab [📺 Thông tin thời sự]. Cửa sổ video thời sự sẽ tự động mở lên trên màn hình. Cán bộ có thể chọn nhanh các kênh thông dụng: VTV1 (Thời sự), QPVN (Quốc phòng), VNews (Thông tấn), VTV24 hoặc dán link tùy ý.", bold_prefix="• Cách chuyển chế độ: ")
+
+    add_callout(doc, "TÍNH NĂNG 1: HẸN GIỜ TỰ TẮT THỜI SỰ (KHÔNG LO QUÊN TẮT):",
+        "Để phòng ngừa trường hợp cán bộ bận công tác quên tắt luồng thời sự, hệ thống tích hợp sẵn tính năng 'Hẹn giờ tự tắt':\n"
+        "• BẬT HẸN GIỜ: Gạt công tắc [Hẹn giờ tự tắt thời sự] sang Bật.\n"
+        "• CHỌN CÁCH TẮT:\n"
+        "   - Theo thời lượng: Bấm chọn nhanh 15p, 30p, 45p, 60p hoặc nhập số phút tùy ý -> Bấm [Đặt].\n"
+        "   - Đến giờ kết thúc: Nhập giờ:phút cụ thể (ví dụ 08:30) -> Bấm [Áp dụng]. Nếu giờ đã qua, máy tự động hiểu là ngày hôm sau.\n"
+        "• ĐẾM NGƯỢC THỜI GIAN THỰC: Màn hình hiển thị đồng hồ đếm ngược từng giây (Ví dụ: 'Sẽ tự tắt lúc 08:30 - Còn 24 phút 15 giây'). Khi còn dưới 1 phút, khung sẽ nhấp nháy màu vàng cam cảnh báo.\n"
+        "• GIA HẠN / HỦY: Có nút [+15p] để gia hạn nhanh và nút [Hủy] để dừng hẹn giờ bất cứ lúc nào.\n"
+        "• TỰ ĐỘNG ĐÓNG POP-UP: Khi hết giờ hẹn, luồng phát sẽ tự dừng, cửa sổ video tự động đóng lại sạch sẽ và có chuông thông báo hiển thị trên màn hình.\n"
+        "• LƯU BỀN VỮNG: Kể cả khi tắt máy hoặc đóng ứng dụng mở lại, hẹn giờ vẫn giữ nguyên hiệu lực đếm ngược.",
+        box_type="tip")
+
+    add_callout(doc, "TÍNH NĂNG 2: LỊCH TỰ ĐỘNG PHÁT VÀ TẮT THỜI SỰ (KHU RIÊNG BIỆT):",
+        "Cán bộ có thể cài đặt sẵn các khung giờ phát tin thời sự hàng ngày (ví dụ 06:00 - 06:30 phát VTV1):\n"
+        "• KHU RIÊNG BIỆT: Nằm riêng biệt trong tab Thông tin thời sự, hoàn toàn tách biệt với 10 mục báo thức nề nếp để không gây nhầm lẫn.\n"
+        "• QUẢN LÝ DỄ DÀNG: Xem danh sách các khung giờ, có công tắc Bật/Tắt riêng cho từng mục, nút Sửa, nút Xóa và nút [+ Thêm lịch].\n"
+        "• NÚT CHẠY THỬ (▶ Thử): Cán bộ có thể bấm nút '▶ Thử' để máy chạy thử 15 giây xem trước mà không cần chờ đến đúng giờ.\n"
+        "• NGUYÊN TẮC VÀNG BẢO ĐẢM NỀ NẾP QUÂN ĐỘI (ƯU TIÊN TUYỆT ĐỐI CHO BÁO THỨC):\n"
+        "   - Nếu lịch thời sự trùng giờ với chuông báo thức, còi báo động hoặc thông báo nề nếp: Thời sự sẽ tự động hoãn lại, nhường toàn bộ loa cho báo thức nề nếp phát trước.\n"
+        "   - Nếu thời sự đang phát mà đến giờ báo thức nề nếp: Hệ thống tự động tạm dừng âm thanh thời sự, phát trọn vẹn hồi chuông báo thức và giọng đọc, sau đó mới tự động tiếp tục phát lại thời sự nếu vẫn trong khung giờ.\n"
+        "   ➔ Đảm bảo 100% nề nếp quân đội không bao giờ bị mất chuông hay chậm trễ!",
+        box_type="important")
 
     # 7. Phát khẩn cấp
     add_styled_heading2(doc, "7. Nút Phát Khẩn Cấp / Ưu Tiên Cao Nhất (Dải màu đỏ (( 🔔 )))")
@@ -683,7 +747,7 @@ def create_user_guide():
     add_styled_heading1(doc, "PHẦN IX: THÔNG TIN HỖ TRỢ KỸ THUẬT VÀ PHÊ DUYỆT")
     
     add_callout(doc, "ĐẦU MỐI HỖ TRỢ KỸ THUẬT 24/7:",
-        "Trong quá trình vận hành, nếu cán bộ gặp bất kỳ vướng mắc nào hoặc muốn bổ sung thêm các bài hát, âm thanh mới vào hệ thống, xin vui lòng liên hệ ngay với Bộ phận Kỹ thuật Phần mềm của Trung tâm để được hỗ trợ tức thì:\n"
+        "Trong quá trình vận hành, nếu cán bộ gặp bất kỳ vướng mắc nào hoặc muốn bổ sung thêm các bài hát, âm thanh mới vào hệ thống, xin vui lòng liên hệ ngay với Bộ phận Hỗ trợ Kỹ thuật:\n"
         "• Đơn vị: Bộ phận Công nghệ Thông tin - Trung tâm GDQPAN ĐHQG-HCM\n"
         "• Địa chỉ: Số 01 Lê Quý Đôn, Khu phố 6, P. Đông Hòa, TP. Dĩ An, Bình Dương\n"
         "• Số điện thoại hỗ trợ kỹ thuật trực ban: (028) 3724 2160 (Số máy lẻ Kỹ thuật)\n"
@@ -704,11 +768,11 @@ def create_user_guide():
     
     sp1 = s_c1.paragraphs[0]
     sp1.alignment = WD_ALIGN_PARAGRAPH.CENTER
-    sr1 = sp1.add_run("NGƯỜI LẬP TÀI LIỆU\n")
+    sr1 = sp1.add_run("BỘ PHẬN KỸ THUẬT & LẬP TÀI LIỆU\n")
     format_run(sr1, font_name="Times New Roman", size_pt=10.5, bold=True)
     sr2 = sp1.add_run("(Ký, ghi rõ họ tên)\n\n\n\n\n")
     format_run(sr2, font_name="Times New Roman", size_pt=9.5, italic=True)
-    sr3 = sp1.add_run("Đội ngũ Kỹ thuật Phần mềm GDQPAN")
+    sr3 = sp1.add_run("Bộ phận Công nghệ Thông tin GDQPAN")
     format_run(sr3, font_name="Times New Roman", size_pt=10.5, bold=True, color_rgb=RGBColor(10, 77, 60))
     
     sp2 = s_c2.paragraphs[0]

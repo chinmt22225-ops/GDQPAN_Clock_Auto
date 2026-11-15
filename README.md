@@ -2,7 +2,11 @@
 
 > **Đơn vị chủ quản:** Trung tâm Giáo dục Quốc phòng và An ninh - Đại học Quốc gia Thành phố Hồ Chí Minh  
 > **Khẩu hiệu:** *"Đoàn kết - Kỷ cương - Chất lượng - Tiên phong"*  
-> **Phiên bản:** 1.0.0 (Desktop Electron App & Web/PWA Dual-Engine)
+> **Bản chính thức đã đóng gói:** Windows 1.4.3 · Android 1.4.4
+> **Demo 15/10/2026:** Windows 1.4.4 trong `version_windows/demo-1.4.4`, APK `mobile/GDQPAN-1.4.5-demo.apk`. API/trang quản trị riêng: https://hethongtruyenthongso-demo.onrender.com. Chưa bật email nên đăng ký thật chưa dùng được; Render Free không giữ dữ liệu lâu dài. [Báo cáo demo](BAO_CAO_DUYET_TAI_KHOAN_2026-10-15.md).
+> Gói Windows trong `version_windows/dist-1.4.3`, APK trong `mobile`. Giao diện tài khoản nằm trong Cài đặt. Báo cáo mới: [BAO_CAO_UI_TAI_KHOAN_2026-10-14.md](BAO_CAO_UI_TAI_KHOAN_2026-10-14.md). Các bản sửa backend cần cập nhật máy chủ riêng; đóng gói ứng dụng không tự triển khai máy chủ.
+>
+> Thư viện nhạc mới gồm 93 bài đóng gói sẵn từ sáu thư mục, giữ nhạc cũ; chỉ Phòng thu được thêm âm thanh. Xem [NHAT_KY_CAP_NHAT.md](NHAT_KY_CAP_NHAT.md) để biết các bài lỗi đã bỏ qua, kết quả kiểm thử và gói bàn giao.
 
 ---
 
@@ -41,19 +45,29 @@ Hệ thống Phát thanh & Báo thức Tự động GDQPAN là giải pháp côn
 
 4. **Phát thanh Âm nhạc & Truyền thống:**
    - Nhạc truyền thống Trung tâm GDQPAN, nhạc hành khúc cách mạng.
-   - Tải thêm các bài hát định dạng MP3/WAV/M4A lưu trữ trực tiếp.
+   - 93 bài mới được đóng gói sẵn theo sáu danh mục; thư viện chỉ xem và phát, không tải thêm bài. Chỉ Phòng thu được nhập thêm âm thanh.
 
 5. **Phát Thông báo bằng Giọng nói Thông minh (TTS 3 Miền):**
    - Soạn thảo nội dung văn bản tùy chỉnh.
    - Giọng phát thanh viên 3 miền (Bắc - Trung - Nam, Nam/Nữ).
    - Tự động đổ chuông báo trước khi phát thanh.
 
-6. **Tiếp sóng Thời sự Trực tuyến (VTV1 HD / YouTube):**
+6. **Tiếp sóng Thời sự Trực tuyến (VTV1 HD, QPVN, VNews, YouTube):**
    - Tích hợp cửa sổ phát luồng truyền hình trực tuyến VTV1 Thời sự & Tin tức mượt mà, hỗ trợ HLS stream.
+   - **Hẹn giờ tự tắt thời sự:** Cài đặt tắt theo thời lượng (15, 30, 45, 60 phút hoặc tùy chỉnh) hoặc theo giờ kết thúc cụ thể; đếm ngược thời gian thực từng giây; tự động đóng pop-up khi hết giờ; duy trì hiệu lực bền vững sau khi tắt/mở lại app.
+   - **Lịch tự động phát và tắt thời sự (Khu riêng biệt):** Quản lý các khung giờ phát tin hàng ngày độc lập với lịch nề nếp; tích hợp nút "Chạy thử"; **đảm bảo nguyên tắc ưu tiên tuyệt đối cho báo thức nề nếp** (thời sự tự động tạm dừng hoặc hoãn phát để nhường loa cho chuông báo thức).
 
 7. **Lập lịch Hẹn giờ Tự động:**
    - Hẹn giờ theo thời gian và ngày trong tuần.
    - Tích hợp Screen WakeLock chống tắt màn hình khi vận hành tự động.
+
+8. **Ghép Âm thanh nền trong lúc Nói & Thu âm chuyên nghiệp (3 Tab):**
+   - Hỗ trợ trộn âm số (Digital Audio Mixing) đồng thời cho cả 3 chế độ: Đọc văn bản AI, Tự thu âm qua Micro và Ghép chuỗi âm thanh.
+   - **Hệ thống 2 thanh trượt âm lượng độc lập:** Thang 0% - 100% (Mặc định Giọng đọc / Mic / Nội dung chính: 100%, Nhạc nền: 25%), điều chỉnh mượt mà theo thời gian thực và tự động lưu cấu hình bền vững vào bộ nhớ (`localStorage`).
+   - **Hỗ trợ đa dạng nguồn âm thanh nền:** Nhạc truyền thống có sẵn trong thư mục `Sound/`, Tệp âm thanh từ máy tính (.mp3, .wav, .m4a), và Đường link trực tuyến (YouTube, Podcast, MP3 online).
+   - **Cơ chế ngắt kết nối an toàn khi mất mạng:** Tự động phát hiện khi mất kết nối Internet, ngắt luồng phát trực tuyến và hiển thị cảnh báo hướng dẫn chuyển sang tệp âm thanh có sẵn trên máy tính hoặc thư mục `Sound/`.
+   - **Khử vang tự động & Cảnh báo đeo tai nghe:** Tự động kích hoạt khử vang và lọc nhiễu môi trường (`echoCancellation`, `noiseSuppression`, `autoGainControl`) kèm khuyến nghị đeo tai nghe để bản thu không bị dội âm từ loa ngoài.
+   - **Kiểm soát tính tương thích khi lập lịch:** Tự động phát hiện và cảnh báo khi người dùng gán giọng Web Speech API kèm nhạc nền vào lịch phát tự động, hướng dẫn chuyển sang giọng Online AI.
 
 ---
 
@@ -103,3 +117,11 @@ npm run build:portable
 # Đóng gói bộ cài đặt Setup NSIS
 npm run build:setup
 ```
+
+---
+
+## 🛡️ Đơn Vị Quản Lý & Vận Hành Phần Mềm
+ 
+- **Đơn vị quản lý:** Trung tâm Giáo dục Quốc phòng và An ninh — Đại học Quốc gia Thành phố Hồ Chí Minh
+- **Mục đích sử dụng:** Phục vụ công tác quản lý, điều hành nề nếp sinh hoạt và phát thanh quân sự nội bộ.
+

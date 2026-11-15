@@ -3,6 +3,9 @@ node_modules/
 
 # Production & Packaging Build Output
 /dist/
+/dist-account-test/
+/dist-account-final/
+/dist-1.4.0/
 /GDQPAN/
 
 # Python cache & bytecode
@@ -38,3 +41,46 @@ Sound/*.mp4
 Sound/*.mov
 mobile/www/Sound/*.mp4
 mobile/www/Sound/*.mov
+mobile/.build-tools/
+mobile/qa/
+mobile/index.before-desktop-ui.html
+mobile/tests/startup.before-desktop.test.js
+
+# Android packages, binary installers & archives
+*.apk
+*.aab
+*.exe
+*.rar
+*.zip
+*.7z
+*.tar.gz
+*.orig_backup
+
+# Local SDKs, emulators & build tools
+android-build-tools/
+**/.build-tools/
+
+# Release distributions, unpacked builds & QA outputs
+version_Android_Windows/
+version_windows/
+qa/
+source-review/
+deploy-account-demo-20261015/
+scratch/
+mobile/tests/scratch-*.js
+
+# Server local data, environment & QA
+server/.env
+server/data/
+server/qa/
+
+# Large local music collections and bundled audio
+Sound/15 bài hát Quân đội/
+Sound/Biển đảo/
+Sound/Cách mạng/
+Sound/Trữ tình/
+Sound/nhạc 12 tháng/
+Sound/nhạc sinh viên/
+Sound/nhạc thanh niên/
+Sound/bundled-music/
+mobile/www/Sound/bundled-music/

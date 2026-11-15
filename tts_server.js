@@ -44,7 +44,7 @@ function resolveVoice(voiceParam, regionParam) {
 }
 
 function startInternalTtsServer(port = PORT) {
-  return new Promise((resolve) => {
+  return new Promise((resolve,reject) => {
     if (serverInstance) return resolve(serverInstance);
 
     const server = http.createServer(async (req, res) => {
@@ -52,8 +52,13 @@ function startInternalTtsServer(port = PORT) {
       const pathname = parsed.pathname;
       const query = parsed.query;
 
-      // CORS headers cho phép giao diện Desktop gọi trực tiếp
-      res.setHeader('Access-Control-Allow-Origin', '*');
+      // Desktop file:// origin and local development only; remote sites cannot drive this service.
+      const origin=req.headers.origin;
+      let localOrigin=!origin||origin==='null';
+      if(origin&&origin!=='null')try{const u=new URL(origin);localOrigin=['http:','https:'].includes(u.protocol)&&['localhost','127.0.0.1'].includes(u.hostname);}catch{}
+      if(!localOrigin){res.writeHead(403);return res.end('Origin not allowed');}
+      if(origin)res.setHeader('Access-Control-Allow-Origin',origin);
+      res.setHeader('Vary','Origin');
       res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', '*');
 
@@ -61,6 +66,7 @@ function startInternalTtsServer(port = PORT) {
         res.writeHead(200);
         return res.end();
       }
+      if(req.method!=='GET'){res.writeHead(405);return res.end('Method not allowed');}
 
       // Endpoint kiểm tra trạng thái dịch vụ AI
       if (pathname === '/api/status') {
@@ -74,6 +80,8 @@ function startInternalTtsServer(port = PORT) {
 
       // Endpoint phát âm thanh TTS
       if (pathname === '/api/tts') {
+        if(['text','voice','region','rate'].some(key=>query[key]!==undefined&&typeof query[key]!=='string')){res.writeHead(400);return res.end('Invalid parameters');}
+        if(query.text!==undefined&&typeof query.text!=='string'){res.writeHead(400);return res.end('Invalid text');}
         const text = (query.text || '').trim();
         if (!text) {
           res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
@@ -85,6 +93,7 @@ function startInternalTtsServer(port = PORT) {
 
         try {
           const tts = new MsEdgeTTS();
+          res.once('close',()=>tts.close());
           await tts.setMetadata(voice, OUTPUT_FORMAT.AUDIO_24KHZ_48KBITRATE_MONO_MP3);
           const { audioStream } = await tts.toStream(text, { rate: rateStr, pitch: '+0Hz' });
 
@@ -100,7 +109,7 @@ function startInternalTtsServer(port = PORT) {
             if (!res.headersSent) {
               res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
               res.end('TTS Stream Error: ' + err.message);
-            }
+            } else res.destroy();
           });
         } catch (err) {
           console.error('[TTS-Node] Lỗi tổng hợp giọng nói:', err.message);
@@ -118,11 +127,11 @@ function startInternalTtsServer(port = PORT) {
 
     server.on('error', (err) => {
       if (err.code === 'EADDRINUSE') {
-        console.log(`[TTS-Node] Cổng ${port} đã được mở trước đó. Sẵn sàng sử dụng.`);
+        console.warn(`[TTS-Node] Cổng ${port} đang được tiến trình khác sử dụng.`);
       } else {
         console.warn('[TTS-Node] Lỗi khởi động server:', err.message);
       }
-      resolve(null);
+      reject(err);
     });
 
     server.listen(port, '127.0.0.1', () => {

@@ -103,3 +103,11 @@ web_QPAN/
    git push -u origin main
    ```
 2. Kích hoạt GitHub Pages trong mục `Settings > Pages` để đưa trang web lên Internet miễn phí.
+
+---
+
+## 🛡️ Quản Lý & Vận Hành Phần Mềm
+ 
+- **Đơn vị quản lý:** Trung tâm Giáo dục Quốc phòng và An ninh — Đại học Quốc gia Thành phố Hồ Chí Minh
+- **Mục đích:** Vận hành phát thanh, quản lý thời khóa biểu quân sự nội bộ.
+

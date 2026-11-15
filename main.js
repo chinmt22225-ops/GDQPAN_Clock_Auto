@@ -4,12 +4,45 @@
  * Main Electron Application Entry
  */
 
-const { app, BrowserWindow, Menu, Tray, nativeImage, ipcMain, dialog, session } = require('electron');
+const { app, BrowserWindow, Menu, Tray, nativeImage, ipcMain, dialog, session, powerMonitor } = require('electron');
+
+// Account traffic is performed in the main process so file:// pages need no permissive CORS.
+handleAppIPC('gdqpan-account-request', async (event, request) => {
+  if (!mainWindow || event.sender !== mainWindow.webContents) throw new Error('Không cho phép cửa sổ này truy cập tài khoản.');
+  const base = new URL(request.base);
+  if (base.pathname !== '/' || base.search || base.hash || base.username || base.password || !(base.protocol === 'https:' || (base.protocol === 'http:' && ['localhost','127.0.0.1'].includes(base.hostname)))) throw new Error('Địa chỉ máy chủ không hợp lệ.');
+  if (typeof request.route !== 'string' || !/^\/[a-zA-Z0-9/_-]+$/.test(request.route)) throw new Error('Thao tác không hợp lệ.');
+  try {
+    const response = await fetch(base.origin + '/api' + request.route, {
+      method: request.method,
+      headers: request.headers,
+      body: request.upload ? Buffer.from(request.body,'base64') : request.body,
+      signal: AbortSignal.timeout(request.upload ? 120000 : request.coldStart ? 90000 : 12000),
+      redirect: 'error'
+    });
+    return {status:response.status,data:request.binary && response.ok ? Buffer.from(await response.arrayBuffer()).toString('base64') : await response.json(),mime:response.headers.get('content-type')};
+  } catch (err) {
+    if (err.cause?.code === 'ECONNREFUSED' || (err.message && err.message.includes('fetch failed'))) {
+      throw new Error(base.protocol==='http:'?`Không thể kết nối đến máy chủ (${base.origin}). Hãy mở chay_may_chu_tai_khoan.bat hoặc npm start trong server.`:`Không thể kết nối đến máy chủ (${base.origin}). Kiểm tra Internet và trạng thái máy chủ. Máy chủ demo có thể cần khởi động lại sau thời gian không sử dụng.`);
+    }
+    throw err;
+  }
+});
 const path = require('path');
+const {trustedIPC,mediaUrl,protectWindow,localPage,allowPermission}=require('./desktop-security.cjs');
+function handleAppIPC(channel,handler,allowVtv=false){
+  ipcMain.handle(channel,(event,...args)=>{
+    const windows=[{window:mainWindow,page:path.join(__dirname,'HE_THONG_THONG_BAO_TU_DONG_DESKTOP.html')}];
+    if(allowVtv)windows.push({window:vtvWindow,page:path.join(__dirname,'vtv_player.html')});
+    if(!trustedIPC(event,windows))throw Error('IPC chỉ cho phép trang ứng dụng tin cậy.');
+    return handler(event,...args);
+  });
+}
 const { spawn, execSync } = require('child_process');
 const fs = require('fs');
 const https = require('https');
 const http = require('http');
+const {fetchPage}=require('./fetch-page.cjs');
 
 // Đảm bảo chỉ chạy 1 phiên bản duy nhất (Single Instance Lock)
 const gotTheLock = app.requestSingleInstanceLock();
@@ -23,6 +56,32 @@ let vtvWindow = null;
 let tray = null;
 let isQuitting = false;
 let ttsProcess = null;
+let runtimeState={authenticated:false,backgroundEnabled:true},screenLocked=false,runtimeTts=false,runtimeWork=Promise.resolve();
+function runtimeForeground(){return !screenLocked&&!![mainWindow,vtvWindow].find(w=>w&&!w.isDestroyed()&&w.isVisible()&&!w.isMinimized()&&w.isFocused());}
+function applyRuntime(){
+  runtimeWork=runtimeWork.catch(()=>{}).then(async()=>{
+    const active=runtimeState.authenticated&&(runtimeState.backgroundEnabled||runtimeForeground());
+    if(!active){
+      stopTtsService();runtimeTts=false;
+      if(tray){tray.destroy();tray=null;}
+      if(vtvWindow&&!vtvWindow.isDestroyed())vtvWindow.close();
+    }else{
+      if(runtimeState.backgroundEnabled&&!tray)createSystemTray();
+      if(!runtimeState.backgroundEnabled&&tray){tray.destroy();tray=null;}
+      if(!runtimeTts){await startTtsService();runtimeTts=true;}
+      // Logout may arrive while the async service is starting.
+      if(!runtimeState.authenticated||(!runtimeState.backgroundEnabled&&!runtimeForeground())){stopTtsService();runtimeTts=false;}
+    }
+  });return runtimeWork;
+}
+function notifyRuntimeVisibility(){
+  if(mainWindow&&!mainWindow.isDestroyed())mainWindow.webContents.send('gdqpan-runtime-visibility',runtimeForeground());
+  applyRuntime().catch(console.warn);
+}
+handleAppIPC('gdqpan-runtime-state',async(_event,state)=>{
+  if(!state||typeof state.authenticated!=='boolean'||typeof state.backgroundEnabled!=='boolean')throw Error('Trạng thái chạy nền không hợp lệ.');
+  runtimeState={authenticated:state.authenticated,backgroundEnabled:state.backgroundEnabled};await applyRuntime();return {active:runtimeState.authenticated&&(runtimeState.backgroundEnabled||runtimeForeground())};
+});
 
 const { startInternalTtsServer, stopInternalTtsServer } = require('./tts_server');
 
@@ -54,6 +113,7 @@ async function startTtsService() {
       return;
     } catch (nodeErr) {
       console.warn('[GDQPAN] Node TTS Server fallback:', nodeErr.message);
+      if(nodeErr.code==='EADDRINUSE')return;
     }
 
     // 2. DỰ PHÒNG: Nếu môi trường có sẵn Python, thử khởi chạy tts_service.py
@@ -118,24 +178,7 @@ function stopTtsService() {
     ttsProcess = null;
   }
 
-  // Quét dọn an toàn cổng 5050 nếu có tiến trình Python/TTS mồ côi
-  if (process.platform === 'win32') {
-    try {
-      const stdout = execSync('netstat -ano', { encoding: 'utf8', timeout: 2000 });
-      const lines = stdout.split('\n');
-      for (const line of lines) {
-        if (line.includes('127.0.0.1:5050') && line.includes('LISTENING')) {
-          const parts = line.trim().split(/\s+/);
-          const pid = parts[parts.length - 1];
-          if (pid && pid !== '0' && pid !== `${process.pid}`) {
-            try {
-              execSync(`taskkill /PID ${pid} /F /T`, { stdio: 'ignore', timeout: 1500 });
-            } catch (e) {}
-          }
-        }
-      }
-    } catch (e) {}
-  }
+  // Never terminate an unrelated process just because it owns port 5050.
 }
 
 // --- KHỞI TẠO CỬA SỔ CHÍNH ---
@@ -157,11 +200,13 @@ function createMainWindow() {
     backgroundColor: '#061a14',
     show: false, // Hiện sau khi đã sẵn sàng
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
+      nodeIntegration: false,       // Tắt Node trong renderer để chặn script không tin cậy truy cập fs/require
+      contextIsolation: true,       // Bật contextBridge — preload vẫn expose electronAPI an toàn
       preload: path.join(__dirname, 'preload.js'),
-      webSecurity: false, // Hỗ trợ tải tệp âm thanh nội bộ
-      allowRunningInsecureContent: true
+      sandbox: true,
+      webSecurity: true,
+      allowRunningInsecureContent: false,
+      backgroundThrottling: false   // Đảm bảo đồng hồ hẹn giờ và lịch không bị chậm khi chạy nền
     }
   });
 
@@ -170,7 +215,17 @@ function createMainWindow() {
 
   // Tải tệp HTML giao diện chính
   const htmlPath = path.join(__dirname, 'HE_THONG_THONG_BAO_TU_DONG_DESKTOP.html');
+  protectWindow(mainWindow,htmlPath);
   mainWindow.loadFile(htmlPath);
+
+  mainWindow.webContents.on('did-fail-load', (event, errorCode, errorDescription, validatedURL) => {
+    console.warn('[GDQPAN] Cảnh báo did-fail-load:', errorCode, errorDescription, validatedURL);
+    setTimeout(() => {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.loadFile(htmlPath);
+      }
+    }, 500);
+  });
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
@@ -180,6 +235,7 @@ function createMainWindow() {
       mainWindow.webContents.focus();
     }
   });
+  for(const event of ['focus','blur','minimize','restore','hide','show'])mainWindow.on(event,()=>setTimeout(notifyRuntimeVisibility,0));
 
   mainWindow.webContents.on('did-finish-load', () => {
     mainWindow.focus();
@@ -223,9 +279,20 @@ function createSystemTray() {
   const trayIcon = fs.existsSync(iconPath) ? nativeImage.createFromPath(iconPath) : nativeImage.createEmpty();
 
   tray = new Tray(trayIcon);
-  tray.setToolTip('GDQPAN - Hệ Thống Thông Báo Tự Động (Đang chạy)');
+  tray.setToolTip('GDQPAN - Hệ Thống Thông Báo Tự Động');
 
   const contextMenu = Menu.buildFromTemplate([
+    {
+      label: 'ℹ️ Giới thiệu phần mềm',
+      click: () => {
+        if (mainWindow) {
+          mainWindow.show();
+          mainWindow.focus();
+          mainWindow.webContents.executeJavaScript('if (typeof openModalSheet === "function") openModalSheet("about");');
+        }
+      }
+    },
+    { type: 'separator' },
     {
       label: 'Mở giao diện GDQPAN',
       click: () => {
@@ -281,6 +348,9 @@ function createSystemTray() {
 
 // --- CẤU HÌNH MẠNG (WHITELIST) & TIỀN XỬ LÝ HEADERS CHO CÁC NGUỒN PHÁT (YOUTUBE, VTV, CDN) ---
 function setupVtvNetworkHandlers() {
+  const localMedia=details=>['xhr','media'].includes(details.resourceType)&&[
+    [mainWindow,'HE_THONG_THONG_BAO_TU_DONG_DESKTOP.html'],[vtvWindow,'vtv_player.html']
+  ].some(([window,page])=>window&&!window.isDestroyed()&&details.webContentsId===window.webContents.id&&localPage(details.frame?.url||window.webContents.getURL(),path.join(__dirname,page)));
   const vtvFilter = {
     urls: [
       '*://*.youtube.com/*',
@@ -303,8 +373,10 @@ function setupVtvNetworkHandlers() {
   // 1. Tự động set Referer và Origin cho các request tới VTV/SohaTV CDN (tránh bị chặn referer)
   session.defaultSession.webRequest.onBeforeSendHeaders(vtvFilter, (details, callback) => {
     const requestHeaders = details.requestHeaders || {};
+    if(!localMedia(details)){callback({cancel:false,requestHeaders});return;}
     const u = details.url || '';
-    if (u.includes('vtv.vn') || u.includes('vtvgo.vn') || u.includes('sohatv.vn') || u.includes('mediacdn.vn') || u.includes('vcmedia.vn')) {
+    const host=new URL(u).hostname;
+    if (['vtv.vn','vtvgo.vn','sohatv.vn','mediacdn.vn','vcmedia.vn'].some(domain=>host===domain||host.endsWith('.'+domain))) {
       requestHeaders['Referer'] = 'https://vtv.vn/';
       requestHeaders['Origin'] = 'https://vtv.vn';
     }
@@ -315,7 +387,8 @@ function setupVtvNetworkHandlers() {
   // 2. Mở CORS headers cho response từ CDN stream để Hls.js không bị chặn
   session.defaultSession.webRequest.onHeadersReceived(vtvFilter, (details, callback) => {
     const responseHeaders = details.responseHeaders || {};
-    responseHeaders['Access-Control-Allow-Origin'] = ['*'];
+    if(!localMedia(details)){callback({cancel:false,responseHeaders});return;}
+    responseHeaders['Access-Control-Allow-Origin'] = ['null'];
     responseHeaders['Access-Control-Allow-Headers'] = ['*'];
     responseHeaders['Access-Control-Allow-Methods'] = ['GET, HEAD, OPTIONS'];
     callback({ cancel: false, responseHeaders });
@@ -329,29 +402,7 @@ function setupVtvNetworkHandlers() {
 
 // --- BỘ TRÍCH XUẤT NGUỒN PHÁT TỰ ĐỘNG (YOUTUBE, VTV, YT-DLP, DIRECT STREAM) ---
 function fetchHttp(url, headers = {}) {
-  return new Promise((resolve, reject) => {
-    try {
-      const u = new URL(url);
-      const mod = u.protocol === 'https:' ? https : http;
-      const req = mod.get(url, {
-        headers: Object.assign({
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-        }, headers),
-        timeout: 10000
-      }, (res) => {
-        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location) {
-          return fetchHttp(res.headers.location, headers).then(resolve).catch(reject);
-        }
-        let data = '';
-        res.on('data', chunk => data += chunk);
-        res.on('end', () => resolve(data));
-      });
-      req.on('error', reject);
-      req.on('timeout', () => { req.destroy(); reject(new Error('timeout')); });
-    } catch (e) {
-      reject(e);
-    }
-  });
+  return fetchPage(url,{'User-Agent':'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',...headers});
 }
 
 async function extractM3u8FromVtvVn(pageUrl) {
@@ -424,6 +475,7 @@ async function resolveStreamInfo(inputUrl) {
     return { error: 'Không phát được link này, vui lòng thử dán link khác hoặc liên hệ người phụ trách kỹ thuật.' };
   }
   const cleanUrl = inputUrl.trim();
+  if(!mediaUrl(cleanUrl))return {error:'Đường dẫn phát cần HTTP hoặc HTTPS hợp lệ.'};
 
   // 1. YouTube: Nhận diện qua domain youtube.com / youtu.be
   const ytMatch = cleanUrl.match(/(?:youtube\.com\/(?:watch\?.*v=|embed\/|v\/|live\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/i);
@@ -530,18 +582,22 @@ function openVtvWindow(streamUrl) {
     icon: appIcon,
     backgroundColor: '#000000',
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false,
+      nodeIntegration: false,       // Tắt Node trong renderer VTV
+      contextIsolation: true,       // Bật contextBridge an toàn
       webviewTag: true,
       preload: path.join(__dirname, 'preload.js'),
-      webSecurity: false,
-      allowRunningInsecureContent: true
+      sandbox: true,
+      webSecurity: true,
+      allowRunningInsecureContent: false,
+      backgroundThrottling: false
     }
   });
 
+  for(const event of ['focus','blur','minimize','restore','hide','show','closed'])vtvWindow.on(event,()=>setTimeout(notifyRuntimeVisibility,0));
   vtvWindow.setMenuBarVisibility(false);
 
   const vtvHtmlPath = path.join(__dirname, 'vtv_player.html');
+  protectWindow(vtvWindow,vtvHtmlPath);
   vtvWindow.loadFile(vtvHtmlPath, { query: { streamUrl: encodeURIComponent(streamUrl || '') } });
 
   vtvWindow.once('ready-to-show', () => {
@@ -591,53 +647,50 @@ function getSettingsFilePath() {
 }
 
 function getVtvConfigPath() {
-  if (app.isPackaged && process.resourcesPath) {
-    const resConfig = path.join(process.resourcesPath, 'config', 'vtv-stream.json');
-    if (fs.existsSync(resConfig)) return resConfig;
-    const exeConfig = path.join(path.dirname(app.getPath('exe')), 'config', 'vtv-stream.json');
-    if (fs.existsSync(exeConfig)) return exeConfig;
-  }
+  if(app.isPackaged)return path.join(app.getPath('userData'),'vtv-stream.json');
   return path.join(__dirname, 'config', 'vtv-stream.json');
 }
 
 // Đăng ký IPC Quản lý cửa sổ VTV Pop-up
-ipcMain.handle('open-vtv-window', (event, streamUrl) => {
+handleAppIPC('open-vtv-window', (event, streamUrl) => {
+  if(streamUrl&&!mediaUrl(streamUrl))throw Error('Đường dẫn phát không hợp lệ.');
   openVtvWindow(streamUrl);
   return true;
 });
 
-ipcMain.handle('close-vtv-window', () => {
+handleAppIPC('close-vtv-window', () => {
   closeVtvWindow();
   return true;
 });
 
-ipcMain.handle('toggle-vtv-window', (event, streamUrl) => {
+handleAppIPC('toggle-vtv-window', (event, streamUrl) => {
+  if(streamUrl&&!mediaUrl(streamUrl))throw Error('Đường dẫn phát không hợp lệ.');
   return toggleVtvWindow(streamUrl);
 });
 
-ipcMain.handle('get-vtv-window-status', () => {
+handleAppIPC('get-vtv-window-status', () => {
   return !!(vtvWindow && !vtvWindow.isDestroyed());
 });
 
-ipcMain.handle('pause-vtv-window', () => {
+handleAppIPC('pause-vtv-window', () => {
   if (vtvWindow && !vtvWindow.isDestroyed() && vtvWindow.webContents) {
     vtvWindow.webContents.send('pause-vtv-stream');
   }
 });
 
-ipcMain.handle('resume-vtv-window', () => {
+handleAppIPC('resume-vtv-window', () => {
   if (vtvWindow && !vtvWindow.isDestroyed() && vtvWindow.webContents) {
     vtvWindow.webContents.send('resume-vtv-stream');
   }
 });
 
 // Đăng ký IPC trích xuất & nhận diện nguồn phát (YouTube / Hls / yt-dlp)
-ipcMain.handle('resolve-stream-info', async (event, url) => {
+handleAppIPC('resolve-stream-info', async (event, url) => {
   return await resolveStreamInfo(url);
-});
+},true);
 
 // Đăng ký IPC đọc / lưu settings.json
-ipcMain.handle('get-app-settings', async () => {
+handleAppIPC('get-app-settings', async () => {
   try {
     const p = getSettingsFilePath();
     if (fs.existsSync(p)) {
@@ -649,12 +702,14 @@ ipcMain.handle('get-app-settings', async () => {
   return null;
 });
 
-ipcMain.handle('save-app-settings', async (event, settingsData) => {
+handleAppIPC('save-app-settings', async (event, settingsData) => {
   try {
+    if(!settingsData||typeof settingsData!=='object'||Array.isArray(settingsData))throw Error('Cài đặt cần là object.');
     const p = getSettingsFilePath();
     const dir = path.dirname(p);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(p, JSON.stringify(settingsData, null, 2), 'utf8');
+    const current=fs.existsSync(p)?JSON.parse(fs.readFileSync(p,'utf8')):{};
+    const temporary=p+'.tmp';fs.writeFileSync(temporary, JSON.stringify({...current,...settingsData}, null, 2), 'utf8');fs.renameSync(temporary,p);
     return { success: true };
   } catch (err) {
     console.warn('[GDQPAN] Lỗi lưu settings.json:', err.message);
@@ -662,10 +717,12 @@ ipcMain.handle('save-app-settings', async (event, settingsData) => {
   }
 });
 
-ipcMain.handle('get-vtv-stream-config', async () => {
+handleAppIPC('get-vtv-stream-config', async () => {
   try {
-    const p = getVtvConfigPath();
-    if (fs.existsSync(p)) {
+    const userPath = getVtvConfigPath();
+    const legacy=app.isPackaged?[path.join(process.resourcesPath,'config','vtv-stream.json'),path.join(path.dirname(app.getPath('exe')),'config','vtv-stream.json')]:[];
+    const p = [userPath,...legacy,path.join(__dirname,'config','vtv-stream.json')].find(file=>fs.existsSync(file));
+    if (p) {
       return JSON.parse(fs.readFileSync(p, 'utf8'));
     }
   } catch (err) {
@@ -674,12 +731,13 @@ ipcMain.handle('get-vtv-stream-config', async () => {
   return null;
 });
 
-ipcMain.handle('save-vtv-stream-config', async (event, configData) => {
+handleAppIPC('save-vtv-stream-config', async (event, configData) => {
   try {
+    if(!configData||typeof configData!=='object'||Array.isArray(configData))throw Error('Cấu hình VTV cần là object.');
     const p = getVtvConfigPath();
     const dir = path.dirname(p);
     if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-    fs.writeFileSync(p, JSON.stringify(configData, null, 2), 'utf8');
+    const temporary=p+'.tmp';fs.writeFileSync(temporary, JSON.stringify(configData, null, 2), 'utf8');fs.renameSync(temporary,p);
     return { success: true };
   } catch (err) {
     console.warn('[GDQPAN] Lỗi ghi vtv-stream.json:', err.message);
@@ -697,10 +755,18 @@ app.on('second-instance', () => {
 });
 
 app.whenReady().then(async () => {
+  // Dọn dẹp sạch sẽ Service Worker hoặc CacheStorage cũ trong Electron session (tránh xung đột với giao thức file://)
+  try {
+    await session.defaultSession.clearStorageData({
+      storages: ['serviceworkers', 'cachestorage']
+    });
+  } catch (e) {}
+
   setupVtvNetworkHandlers();
-  await startTtsService();
+  session.defaultSession.setPermissionRequestHandler((contents,permission,callback,details)=>callback(allowPermission(contents,permission,details,mainWindow,path.join(__dirname,'HE_THONG_THONG_BAO_TU_DONG_DESKTOP.html'))));
   createMainWindow();
-  createSystemTray();
+  powerMonitor.on('lock-screen',()=>{screenLocked=true;notifyRuntimeVisibility();});
+  powerMonitor.on('unlock-screen',()=>{screenLocked=false;notifyRuntimeVisibility();});
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {

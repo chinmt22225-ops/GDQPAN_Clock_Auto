@@ -1,10 +1,15 @@
 {
   "name": "gdqpan-mobile",
-  "version": "1.0.0",
+  "version": "1.4.13",
   "description": "GDQPAN Mobile App - Hệ Thống Thông Báo Tự Động",
   "scripts": {
-    "build": "echo Web build ready",
-    "test": "node tests/startup.test.js",
+    "build": "node build-web.js",
+    "preview": "node preview.js",
+    "test": "node tests/mobile.test.js",
+    "test:apk": "node --test tests/apk-integrity.test.cjs",
+    "test:player": "node tests/mobile-player.test.cjs",
+    "test:music-timer": "node tests/mobile-music-timer.test.cjs",
+    "verify:apk": "node verify-apk.cjs",
     "cap:sync": "cap sync",
     "cap:open": "cap open android"
   },
@@ -21,5 +26,10 @@
   },
   "devDependencies": {
     "puppeteer-core": "^25.13.0"
+  },
+  "overrides": {
+    "xcode": {
+      "uuid": "11.1.1"
+    }
   }
 }

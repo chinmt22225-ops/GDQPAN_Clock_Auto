@@ -1,8 +1,9 @@
 /* Service Worker cho Hệ Thống Thông Báo Tự Động GDQPAN (PWA Offline) */
-const CACHE_NAME = 'gdqpan-pwa-v1';
+const CACHE_NAME = 'gdqpan-pwa-v2';
 const CORE_ASSETS = [
   './',
   './HE_THONG_THONG_BAO_TU_DONG_DESKTOP.html',
+  './HE_THONG_THONG_BAO_TU_DONG_MOBILE.html',
   './manifest.json',
   './Sound/preset_sounds_data.js',
   './assets/icon.png',
@@ -41,7 +42,17 @@ self.addEventListener('activate', (event) => {
 // Xử lý nạp tài nguyên: Cache-First với Stale-While-Revalidate
 self.addEventListener('fetch', (event) => {
   const request = event.request;
-  const url = new URL(request.url);
+  let url;
+  try {
+    url = new URL(request.url);
+  } catch (e) {
+    return;
+  }
+
+  // Bỏ qua hoàn toàn giao thức không phải http/https (như file:// trong Electron)
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    return;
+  }
 
   // Bỏ qua các request POST, request tới dịch vụ AI 5050, Cloud API hoặc luồng Video/HLS trực tiếp của VTV
   if (

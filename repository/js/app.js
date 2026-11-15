@@ -1,7 +1,9 @@
-/**
- * GDQPAN Audio System - Main Application Controller
- * Điều khiển giao diện kép (Desktop & Mobile), liên kết Audio, TTS, Lập lịch và Lưu trữ
- */
+// --- THÔNG TIN HỆ THỐNG THÔNG BÁO TỰ ĐỘNG GDQPAN ---
+console.log(
+  '%c🛡️ HỆ THỐNG THÔNG BÁO TỰ ĐỘNG GDQPAN\n%cTrung tâm Giáo dục Quốc phòng và An ninh - ĐHQG-HCM',
+  'color: #00e676; font-size: 14px; font-weight: bold; background: #061a14; padding: 4px 8px; border-radius: 4px;',
+  'color: #80cbc4; font-size: 11px; background: #061a14; padding: 2px 8px; border-radius: 0 0 4px 4px;'
+);
 
 document.addEventListener('DOMContentLoaded', async () => {
   // 1. Khởi tạo các module
@@ -886,15 +888,15 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // --- MODAL: GIỚI THIỆU ---
   function renderAboutModal() {
-    modalTitle.innerHTML = '<span>ℹ</span> Giới thiệu Hệ thống Thông báo GDQPAN';
+    modalTitle.innerHTML = '<span>ℹ️</span> Giới Thiệu Phần Mềm';
     modalContent.innerHTML = `
       <div style="text-align:center;padding:10px 0;">
-        <img src="assets/logo_gdqpan.png" style="width:90px;height:90px;object-fit:contain;margin-bottom:8px;" alt="Logo GDQPAN">
+        <img src="assets/logo_gdqpan.png" style="width:80px;height:80px;object-fit:contain;margin-bottom:8px;" alt="Logo GDQPAN">
         <h3 style="font-size:16px;font-weight:900;color:var(--primary-dark);">HỆ THỐNG THÔNG BÁO TỰ ĐỘNG - GDQPAN</h3>
-        <p style="font-size:12.5px;color:var(--accent-red);font-weight:800;margin-top:2px;">TRUNG TÂM GIÁO DỤC QUỐC PHÒNG VÀ AN NINH<br>ĐẠI HỌC QUỐC GIA THÀNH PHỐ HỒ CHÍ MINH</p>
-        <p style="font-size:11.5px;font-style:italic;color:#666;margin-top:6px;">"Đoàn kết - Kỷ cương - Chất lượng - Tiên phong"</p>
+        <p style="font-size:12px;color:var(--accent-red);font-weight:800;margin-top:2px;">TRUNG TÂM GIÁO DỤC QUỐC PHÒNG VÀ AN NINH<br>ĐẠI HỌC QUỐC GIA THÀNH PHỐ HỒ CHÍ MINH</p>
       </div>
-      <div style="background:#f4f8f6;padding:12px;border-radius:10px;font-size:12.5px;line-height:1.5;color:#333;margin-top:10px;">
+
+      <div style="background:#f4f8f6;padding:12px;border-radius:10px;font-size:12.5px;line-height:1.5;color:#333;">
         <p><b>Phiên bản:</b> 2.0 (Mobile & Desktop Dual-Engine)</p>
         <p><b>Tính năng chính:</b></p>
         <ul style="margin-left:18px;margin-top:4px;">

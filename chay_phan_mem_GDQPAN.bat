@@ -7,7 +7,10 @@ echo ========================================================
 echo.
 echo Dang khoi dong phan mem va dich vu am thanh AI tu dong...
 taskkill /F /IM GDQPAN.exe >nul 2>&1
-if exist "%~dp0dist\win-unpacked\GDQPAN.exe" (
+if exist "%~dp0GDQPAN\GDQPAN.exe" (
+    cd /d "%~dp0GDQPAN"
+    start "" "GDQPAN.exe"
+) else if exist "%~dp0dist\win-unpacked\GDQPAN.exe" (
     cd /d "%~dp0dist\win-unpacked"
     start "" "GDQPAN.exe"
 ) else (

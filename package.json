@@ -1,7 +1,7 @@
 {
   "name": "gdqpan",
   "productName": "GDQPAN",
-  "version": "1.0.0",
+  "version": "1.4.5",
   "description": "Hệ Thống Thông Báo & Phát Thanh Tự Động GDQPAN - ĐHQG-HCM",
   "main": "main.js",
   "scripts": {
@@ -9,9 +9,15 @@
     "pack": "electron-builder --dir",
     "dist": "electron-builder",
     "build:portable": "electron-builder --win portable",
-    "build:setup": "electron-builder --win nsis"
+    "build:setup": "electron-builder --win nsis",
+    "build:music": "node scripts/build-music-catalog.js",
+    "prepack": "npm run build:music",
+    "predist": "npm run build:music",
+    "prebuild:portable": "npm run build:music",
+    "prebuild:setup": "npm run build:music",
+    "test:music": "node scripts/test-fixed-library.js"
   },
-  "author": "Trung Tâm Giáo Dục Quốc Phòng và An Ninh - ĐHQG-HCM",
+  "author": "Trung Tâm Giáo Dục Quốc Phòng và An Ninh — ĐHQG-HCM",
   "license": "MIT",
   "devDependencies": {
     "electron": "44.4.1",
@@ -20,8 +26,9 @@
   "build": {
     "appId": "vn.edu.vnuhcm.gdqpan.thongbao",
     "productName": "GDQPAN",
+    "copyright": "Trung Tâm Giáo Dục Quốc Phòng và An Ninh — ĐHQG-HCM",
     "directories": {
-      "output": "dist"
+      "output": "version_windows/demo-1.4.4"
     },
     "win": {
       "icon": "assets/icon.ico",
@@ -52,16 +59,31 @@
     },
     "files": [
       "main.js",
+      "desktop-security.cjs",
+      "fetch-page.cjs",
       "preload.js",
       "tts_server.js",
       "HE_THONG_THONG_BAO_TU_DONG_DESKTOP.html",
+      "HE_THONG_THONG_BAO_TU_DONG_MOBILE.html",
       "vtv_player.html",
+      "manifest.json",
+      "sw.js",
       "assets/**/*",
       "config/**/*",
       "Sound/**/*",
+      "!Sound/**/*.mp4",
+      "!Sound/**/*.mov",
       "!Sound/demo_1_BaoThuc.wav",
       "!Sound/báo thức_1.m4a",
-      "tts_service.py"
+      "tts_service.py",
+      "!Sound/15 bài hát Quân đội/**/*",
+      "!Sound/Biển đảo/**/*",
+      "!Sound/Cách mạng/**/*",
+      "!Sound/nhạc sinh viên/**/*",
+      "!Sound/nhạc thanh niên/**/*",
+      "!Sound/Trữ tình/**/*",
+      "!Sound/**/*.zip",
+      "!Sound/nhạc 12 tháng/**/*"
     ],
     "extraResources": [
       {
